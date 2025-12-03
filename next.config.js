@@ -63,6 +63,8 @@ const nextConfig = {
   compress: true,
   // Configuración de caché
   generateEtags: true,
+  // Configuración de compilación
+  swcMinify: true,
   // Configuración de exportación
   output: 'standalone',
 }
