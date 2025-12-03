@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Andrés Jiménez",
+    "title": "Atención inmediata y excelente servicio",
+    "content": "Atención inmediata, buen trato y excelente servicio con productos de calidad... ¡Totalmente recomendado!",
+    "image": "/images/testimonio_1.jpg"
+  },
+  {
+    "name": "Jose Gonzalez",
+    "title": "Eficiencia y rapidez inigualables",
+    "content": "Excelente... me ayudaron con el cambio de las pastillas de mi vehículo de forma inmediata. Un servicio que valoro mucho.",
+    "image": "/images/testimonio_2.jpg"
+  },
+  {
+    "name": "María Fernanda C.",
+    "title": "Mi auto como nuevo, ¡sin preocupaciones!",
+    "content": "Siempre llevo mi carro a Car One. Son honestos, rápidos y el trabajo es impecable. ¡Mi mejor elección para el mantenimiento!",
+    "image": "/images/testimonio_3.jpg"
+  }
+]

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Página principal -->
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Servicios principales -->
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/mantenimiento-preventivo</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/frenos</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/suspension</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Servicios secundarios -->
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/enderezada-pintura</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/neumaticos</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/baterias</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/lubricantes</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/autopartes-y-lubricantes</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/almacen-repuestos-lubricantes</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/sistema-aire-acondicionado</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/sistema-de-direccion</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/sistema-de-transmision</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/servicios/gestion-de-flotas</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- Otras páginas importantes -->
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/contacto</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog</loc>
+    <lastmod>2024-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Artículos del Blog -->
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog/alineacion-y-balanceo-urgente-en-loja-para-un-viaje-de-regreso-seguro</loc>
+    <lastmod>2024-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog/problemas-con-tu-auto-en-loja-encuentra-la-solucion-rapida-en-carone</loc>
+    <lastmod>2024-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog/escuchas-un-ruido-extrano-al-frenar-posibles-causas-y-soluciones-en-loja</loc>
+    <lastmod>2024-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog/luz-de-check-engine-encendida-que-significa-y-que-hacer-si-te-pasa-en-loja</loc>
+    <lastmod>2024-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.mecanicaautomotrizloja.com/blog/sube-la-temperatura-de-tu-auto-5-pasos-a-seguir-si-tu-motor-se-recalienta-en-loja</loc>
+    <lastmod>2024-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+</urlset> 
