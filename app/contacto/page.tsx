@@ -1,216 +1,290 @@
-"use client"
+import { Metadata } from 'next';
+import ContactoClient from './ContactoClient';
+import { LLMHiddenContent } from '@/components/LLMHiddenContent';
 
-import { Header } from "@/components/header"
-import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Phone, Mail, Clock } from "lucide-react"
+export const metadata: Metadata = {
+  title: 'Contacto - Taller Mecánico en Loja | Car One Tecnicentro',
+  description: 'Contacta a Car One Tecnicentro en Loja. Av. California y Houston, Parque Industrial. WhatsApp: 0979606963. Horarios: Lun-Vie 8AM-6PM, Sáb 8AM-2PM.',
+  keywords: [
+    'taller mecánico loja contacto',
+    'car one loja dirección',
+    'mecánica loja teléfono',
+    'taller loja ubicación',
+    'parque industrial loja'
+  ],
+};
 
 export default function ContactoPage() {
-  const openWhatsApp = () => {
-    window.open("https://wa.me/593979606963", "_blank")
-  }
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      
-      {/* Hero Section */}
-      <section
-        className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/images/taller.jpg')`,
-          marginTop: '-80px',
-          paddingTop: '80px',
-        }}
-      >
-        <div className="container mx-auto px-4 text-center text-white">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
-            <span className="block">Taller Mecánico en <span className="text-[#00FF00]">Loja</span></span>
-            <span className="block text-2xl md:text-3xl lg:text-4xl mt-2 normal-case font-normal">Contacto y Ubicación</span>
-          </h1>
-          <p className="text-base md:text-lg mb-6 max-w-2xl mx-auto leading-relaxed">
-            Expertos en reparación automotriz en Loja. Agenda tu cita por WhatsApp o visítanos en el sector Parque Industrial. Servicio profesional garantizado.
-          </p>
-        </div>
-      </section>
+    <>
+      <ContactoClient />
 
-      {/* Contact Content */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12">
-              {/* Contact Form */}
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Solicita tu Cita</h2>
-                <h3 className="text-xl font-semibold text-gray-700 mb-6">O Escríbenos un Mensaje</h3>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <form className="space-y-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#00FF00] focus:border-transparent"
-                        placeholder="Tu nombre"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#00FF00] focus:border-transparent"
-                        placeholder="tu@email.com"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#00FF00] focus:border-transparent"
-                        placeholder="Tu teléfono"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
-                      <textarea
-                        id="message"
-                        name="message"
-                        rows={4}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#00FF00] focus:border-transparent"
-                        placeholder="¿En qué podemos ayudarte?"
-                        required
-                      ></textarea>
-                    </div>
-                    <div>
-                      <button
-                        type="submit"
-                        className="w-full bg-[#00FF00] hover:bg-[#00CC00] text-black font-medium py-2 px-4 rounded-md transition-colors"
-                      >
-                        Enviar Mensaje
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-              
-              {/* Contact Information */}
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Taller Mecánico en Loja
-                  </h2>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-4">
-                    Tu Centro de Servicio Automotriz de Confianza
-                  </h3>
-                  <div className="w-16 h-1 bg-[#00FF00] mb-6"></div>
-                  <p className="text-lg text-gray-600 mb-8">
-                    Visita nuestro taller en el sector Parque Industrial de Loja. Expertos en reparación automotriz con atención personalizada y repuestos de calidad. Tu vehículo en las mejores manos.
-                  </p>
-                </div>
+      <LLMHiddenContent>
+        <h1>Contacto - Taller Mecánico Car One Tecnicentro en Loja</h1>
 
-                {/* Contact Cards */}
-                <div className="space-y-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <MapPin className="w-6 h-6 text-[#00FF00] mt-1 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-2">Dirección</h3>
-                          <p className="text-gray-600">
-                            Av. California y Houston. Sector Parque Industrial<br />
-                            Loja, Ecuador
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <p>
+          Car One Tecnicentro es tu taller mecánico de confianza en Loja. Contáctanos para agendar tu servicio de
+          mecánica automotriz, diagnóstico gratuito o consultar sobre nuestros servicios especializados.
+        </p>
 
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <Phone className="w-6 h-6 text-[#00FF00] mt-1 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-2">WhatsApp</h3>
-                          <p className="text-gray-600 mb-2">0979606963</p>
-                          <button
-                            onClick={openWhatsApp}
-                            className="bg-[#00FF00] hover:bg-[#00CC00] text-black px-4 py-2 rounded text-sm font-medium transition-colors"
-                          >
-                            Chatear por WhatsApp
-                          </button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <h2>Información de Contacto</h2>
 
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <Mail className="w-6 h-6 text-[#00FF00] mt-1 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-                          <p className="text-gray-600">
-                            asesor.servicio.carone@gmail.com
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <h3>Dirección del Taller en Loja</h3>
+        <p>
+          Av. California y Houston<br />
+          Sector Parque Industrial<br />
+          Loja, Ecuador
+        </p>
+        <p>
+          Nuestro taller está ubicado en una zona de fácil acceso en el sector Parque Industrial, cerca de las
+          principales vías de la ciudad de Loja. Contamos con amplio estacionamiento y zonas de espera cómodas
+          para nuestros clientes.
+        </p>
 
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <Clock className="w-6 h-6 text-[#00FF00] mt-1 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-2">Horarios de Atención</h3>
-                          <p className="text-gray-600">
-                            Lunes a Viernes: 8:00 AM - 6:00 PM<br />
-                            Sábados: 8:00 AM - 2:00 PM<br />
-                            Domingos: Cerrado
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+        <h3>Teléfono y WhatsApp</h3>
+        <p>WhatsApp: 0979606963</p>
+        <p>
+          Puedes contactarnos directamente por WhatsApp para:
+        </p>
+        <ul>
+          <li>Agendar tu cita de mantenimiento o reparación</li>
+          <li>Consultar precios de servicios</li>
+          <li>Solicitar cotizaciones de repuestos</li>
+          <li>Resolver dudas sobre el estado de tu vehículo</li>
+          <li>Solicitar servicio a domicilio (cambio de batería)</li>
+          <li>Recibir asesoría técnica profesional</li>
+        </ul>
 
-                {/* Map */}
-                <div className="mt-8">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-2xl">Nuestra Ubicación en Loja</h3>
-                  <p className="text-gray-600 mb-4">Encuéntranos fácilmente en el sector Parque Industrial, cerca de las principales vías de la ciudad.</p>
-                  <div className="rounded-lg overflow-hidden w-full">
-                    <iframe
-                      src="https://maps.google.com/maps?q=-3.9457594997517993,-79.21839246088675&z=17&output=embed&iwloc=near"
-                      width="100%"
-                      height="450"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="rounded-lg shadow-xl"
-                      title="Ubicación de Car One"
-                    ></iframe>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <h3>Correo Electrónico</h3>
+        <p>Email: asesor.servicio.carone@gmail.com</p>
+        <p>
+          Respuesta en menos de 24 horas hábiles. Puedes enviarnos consultas sobre servicios, presupuestos o
+          información general de nuestro taller.
+        </p>
 
-      {/* Footer */}
-      <footer className="bg-black text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            © {new Date().getFullYear()} Car One Tecnicentro. Todos los derechos reservados.
-          </p>
-        </div>
-      </footer>
-    </div>
-  )
+        <h2>Horarios de Atención</h2>
+
+        <h3>Lunes a Viernes</h3>
+        <p>8:00 AM - 6:00 PM</p>
+        <p>
+          Horario continuo de atención para tu comodidad. No cerramos al mediodía, puedes visitarnos en cualquier
+          momento del horario laboral.
+        </p>
+
+        <h3>Sábados</h3>
+        <p>8:00 AM - 2:00 PM</p>
+        <p>
+          Atención especial los sábados para quienes trabajan entre semana y necesitan servicios de mecánica
+          automotriz en fin de semana.
+        </p>
+
+        <h3>Domingos y Feriados</h3>
+        <p>Cerrado</p>
+        <p>
+          Para emergencias, puedes contactarnos por WhatsApp y coordinaremos asistencia según disponibilidad.
+        </p>
+
+        <h2>Cómo Llegar a Car One Tecnicentro</h2>
+
+        <h3>Ubicación en el Mapa</h3>
+        <p>
+          Coordenadas GPS: -3.9457594997517993, -79.21839246088675
+        </p>
+
+        <h3>Referencias de Ubicación</h3>
+        <p>
+          Nos encontramos en el Sector Parque Industrial de Loja, una zona de fácil acceso desde cualquier punto
+          de la ciudad. Ubicados en la intersección de Av. California y Houston.
+        </p>
+
+        <h3>Acceso en Vehículo</h3>
+        <ul>
+          <li>Desde el centro de Loja: Aproximadamente 10 minutos en vehículo</li>
+          <li>Vías de acceso principales pavimentadas y en buen estado</li>
+          <li>Estacionamiento amplio y gratuito para clientes</li>
+          <li>Fácil ingreso y salida del taller</li>
+        </ul>
+
+        <h3>Transporte Público</h3>
+        <p>
+          Múltiples líneas de transporte público pasan cerca del sector Parque Industrial. Pregunta por rutas que
+          pasen por Av. California.
+        </p>
+
+        <h2>Servicios que Puedes Agendar</h2>
+
+        <h3>Mantenimiento Preventivo</h3>
+        <p>
+          Agenda tu servicio de mantenimiento programado. Incluye: cambio de aceite, revisión de frenos, filtros,
+          líquidos y diagnóstico general.
+        </p>
+
+        <h3>Reparaciones Especializadas</h3>
+        <ul>
+          <li>Sistema de frenos (pastillas, discos, líquido) - Desde $18</li>
+          <li>Suspensión, alineación y balanceo - Desde $90</li>
+          <li>Sistema eléctrico y baterías - Desde $118</li>
+          <li>Cambio de aceite y lubricantes - Desde $40</li>
+          <li>Enderezada y pintura - Desde $600</li>
+          <li>Neumáticos y enllantaje - Desde $120</li>
+        </ul>
+
+        <h3>Diagnóstico Computarizado</h3>
+        <p>
+          Diagnóstico gratuito con equipos de última tecnología para detectar fallas electrónicas, problemas de
+          motor, sistema de frenos, suspensión y más.
+        </p>
+
+        <h3>Servicios a Domicilio</h3>
+        <p>
+          Cambio de batería a domicilio en Loja. Si tu vehículo no arranca, llevamos la batería correcta y la
+          instalamos en tu ubicación.
+        </p>
+
+        <h2>Por Qué Visitarnos</h2>
+
+        <h3>Más de 20 Años de Experiencia</h3>
+        <p>
+          Somos un taller establecido en Loja con dos décadas de trayectoria comprobada en mecánica automotriz
+          profesional.
+        </p>
+
+        <h3>Taller Multimarcas</h3>
+        <p>
+          Trabajamos con todas las marcas de vehículos: Chevrolet, Toyota, Nissan, Hyundai, Kia, Ford, Mazda,
+          Honda, Volkswagen, y más.
+        </p>
+
+        <h3>Repuestos de Calidad</h3>
+        <p>
+          Utilizamos únicamente repuestos originales o de marcas reconocidas con garantía de fábrica para asegurar
+          la durabilidad de las reparaciones.
+        </p>
+
+        <h3>Atención Transparente</h3>
+        <p>
+          Te explicamos detalladamente el diagnóstico de tu vehículo, las reparaciones necesarias y los costos
+          antes de realizar cualquier trabajo.
+        </p>
+
+        <h3>Precios Justos</h3>
+        <p>
+          Ofrecemos precios competitivos y honestos sin costos ocultos. Cotizaciones claras y detalladas antes de
+          aprobar el trabajo.
+        </p>
+
+        <h2>Preguntas Frecuentes sobre Contacto y Servicios</h2>
+
+        <h3>¿Necesito agendar cita previa?</h3>
+        <p>
+          Recomendamos agendar cita por WhatsApp para garantizar atención inmediata, especialmente para servicios
+          que requieren más tiempo como enderezada, pintura o reparaciones complejas. Para servicios rápidos como
+          cambio de aceite, puedes visitarnos directamente.
+        </p>
+
+        <h3>¿Cuánto tiempo toma un servicio típico?</h3>
+        <p>
+          Depende del servicio:
+        </p>
+        <ul>
+          <li>Cambio de aceite: 45 minutos a 1 hora</li>
+          <li>Cambio de pastillas de freno: 1 a 2 horas</li>
+          <li>Alineación y balanceo: 1 hora</li>
+          <li>Cambio de batería: 30 minutos</li>
+          <li>Diagnóstico computarizado: 30 a 45 minutos</li>
+        </ul>
+
+        <h3>¿Ofrecen diagnóstico gratuito?</h3>
+        <p>
+          Sí, ofrecemos diagnóstico gratuito para todos los vehículos. Nuestros técnicos evaluarán el problema y
+          te darán un presupuesto detallado sin compromiso.
+        </p>
+
+        <h3>¿Trabajan con garantía?</h3>
+        <p>
+          Todos nuestros trabajos incluyen garantía en mano de obra. Los repuestos instalados cuentan con garantía
+          de fábrica que varía según la marca y tipo de pieza.
+        </p>
+
+        <h3>¿Puedo esperar mientras reparan mi vehículo?</h3>
+        <p>
+          Sí, contamos con zona de espera cómoda con WiFi gratuito. Para servicios más largos, ofrecemos la opción
+          de dejarnos tu vehículo y recogerlo cuando esté listo.
+        </p>
+
+        <h3>¿Atienden emergencias?</h3>
+        <p>
+          Para emergencias durante el horario laboral, puedes visitarnos directamente. Fuera de horario, contáctanos
+          por WhatsApp y evaluaremos la posibilidad de asistencia según la urgencia.
+        </p>
+
+        <h2>Área de Cobertura</h2>
+
+        <h3>Servicio en Taller</h3>
+        <p>
+          Atendemos a clientes de toda la ciudad de Loja y cantones cercanos:
+        </p>
+        <ul>
+          <li>Loja ciudad</li>
+          <li>Catamayo</li>
+          <li>Malacatos</li>
+          <li>Vilcabamba</li>
+          <li>Saraguro</li>
+          <li>Gonzanamá</li>
+        </ul>
+
+        <h3>Servicio a Domicilio</h3>
+        <p>
+          El servicio de cambio de batería a domicilio está disponible en toda la ciudad de Loja y sector urb ano
+          cercano. Consulta disponibilidad para zonas rurales.
+        </p>
+
+        <h2>Facilidades de Pago</h2>
+
+        <h3>Métodos de Pago Aceptados</h3>
+        <ul>
+          <li>Efectivo</li>
+          <li>Transferencia bancaria</li>
+          <li>Tarjetas de crédito y débito</li>
+          <li>Pago con código QR</li>
+        </ul>
+
+        <h3>Cotizaciones</h3>
+        <p>
+          Solicita tu cotización gratuita por WhatsApp. Enviamos presupuestos detallados con costos de repuestos y
+          mano de obra sin compromiso.
+        </p>
+
+        <h2>Síguenos en Redes Sociales</h2>
+        <p>
+          Mantente informado sobre promociones, consejos de mantenimiento y novedades del taller siguiéndonos en
+          nuestras redes sociales.
+        </p>
+
+        <h2>Contacta a Car One Tecnicentro Hoy</h2>
+        <p>
+          No esperes a que un problema menor se convierta en una reparación costosa. Contáctanos hoy mismo para:
+        </p>
+        <ul>
+          <li>Agendar tu mantenimiento preventivo</li>
+          <li>Solicitar diagnóstico gratuito de tu vehículo</li>
+          <li>Consultar sobre servicios específicos</li>
+          <li>Pedir cotización de reparación</li>
+          <li>Recibir asesoría técnica profesional</li>
+        </ul>
+
+        <p>
+          <strong>WhatsApp: 0979606963</strong> - Respuesta rápida y atención personalizada<br />
+          <strong>Email: asesor.servicio.carone@gmail.com</strong> - Consultas y cotizaciones<br />
+          <strong>Dirección: Av. California y Houston, Sector Parque Industrial, Loja</strong><br />
+          <strong>Horario: Lun-Vie 8AM-6PM | Sáb 8AM-2PM</strong>
+        </p>
+
+        <p>
+          Car One Tecnicentro - Tu taller mecánico de confianza en Loja con más de 20 años de experiencia. Visítanos
+          en el Sector Parque Industrial y comprueba por qué somos la primera opción para el cuidado de tu vehículo.
+        </p>
+      </LLMHiddenContent>
+    </>
+  );
 }
