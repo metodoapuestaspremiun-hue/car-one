@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Edit, Trash2, Eye, Calendar, Download } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, Calendar, Download, LogOut } from "lucide-react"
 
 interface BlogPost {
   id?: number;
@@ -76,8 +77,24 @@ const loadPosts = async (): Promise<BlogPost[]> => {
 };
 
 export default function AdminPanel() {
+  const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("admin_authenticated");
+    if (isAuthenticated !== "true") {
+      router.push("/admin/login");
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_authenticated");
+    router.push("/admin/login");
+  };
   // Define a type for the form state that makes id, date, and slug optional
   type PostFormData = {
     id?: number;
@@ -448,8 +465,8 @@ export default function AdminPanel() {
     setActiveTab("create");
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return isAuthorized ? (
+    <div className="min-h-screen bg-gray-50 pt-24">
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -457,10 +474,16 @@ export default function AdminPanel() {
               <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
               <p className="text-gray-600">Car One Tecnicentro - Gestión de blog</p>
             </div>
-            <Button onClick={handleNewPost} className="bg-[#00FF00] hover:bg-[#00CC00] text-black">
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Artículo
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleLogout} variant="outline" className="border-red-500 text-red-500 hover:bg-red-50">
+                <LogOut className="w-4 h-4 mr-2" />
+                Cerrar Sesión
+              </Button>
+              <Button onClick={handleNewPost} className="bg-[#00FF00] hover:bg-[#00CC00] text-black">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Artículo
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -894,5 +917,5 @@ export default function AdminPanel() {
         </Tabs>
       </div>
     </div>
-  );
+  ) : null;
 }
