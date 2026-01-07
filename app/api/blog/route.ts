@@ -23,6 +23,14 @@ type BlogPost = {
   image: string;
   category: string;
   status: 'published' | 'draft';
+  // Nuevos campos SEO
+  meta_description?: string;
+  focus_keyword?: string;
+  tags?: string[];
+  image_alt?: string;
+  published_date?: string;
+  views_count?: number;
+  featured?: boolean;
 };
 
 // Generate a URL-friendly slug from a string
@@ -42,31 +50,31 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const slug = searchParams.get('slug');
-    
+
     let query = supabase.from('blog_posts').select('*');
-    
+
     if (slug) {
       // Buscar por slug exacto
       const { data, error } = await query.eq('slug', slug).single();
       return error
         ? NextResponse.json({ error: 'Artículo no encontrado' }, { status: 404 })
         : NextResponse.json(data);
-    } 
-    
+    }
+
     // Filtrar por estado si se proporciona
     if (status) {
       query = query.eq('status', status);
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
       if (error.code === 'PGRST116') { // No se encontró el artículo
         return NextResponse.json({ error: 'Artículo no encontrado' }, { status: 404 });
       }
       throw error;
     }
-    
+
     return NextResponse.json(data || []);
   } catch (error) {
     console.error('Error fetching blog posts:', error);
@@ -81,18 +89,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     const requiredFields = ['title', 'excerpt', 'content', 'category'] as const;
     const missingFields = requiredFields.filter(field => !body[field]);
-    
+
     if (missingFields.length > 0) {
       return NextResponse.json(
         { error: `Faltan campos obligatorios: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
-    
+
     // Create new post
     const newPost = {
       title: body.title,
@@ -101,21 +109,28 @@ export async function POST(request: Request) {
       author: body.author || 'Car One Tecnicentro',
       read_time: body.readTime || '5 min',
       image: body.image || '/images/blog-default.jpg',
+      image_alt: body.image_alt || body.title,
       category: body.category,
       status: body.status || 'draft',
-      slug: generateSlug(body.title),
+      slug: body.slug || generateSlug(body.title),
+      // Campos SEO
+      meta_description: body.meta_description || body.excerpt,
+      focus_keyword: body.focus_keyword || '',
+      tags: body.tags || [],
+      published_date: body.published_date || new Date().toISOString(),
+      featured: body.featured || false,
       created_at: new Date().toISOString()
     };
-    
+
     // Insert into Supabase
     const { data, error } = await supabase
       .from('blog_posts')
       .insert([newPost])
       .select()
       .single();
-    
+
     if (error) throw error;
-    
+
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating blog post:', error);
@@ -130,10 +145,10 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     console.log('PUT /api/blog - Request received');
-    
+
     const body = await request.json();
     console.log('Request body:', JSON.stringify(body, null, 2));
-    
+
     if (!body.id) {
       console.error('Missing ID in request');
       return NextResponse.json(
@@ -145,14 +160,14 @@ export async function PUT(request: Request) {
     // Validate required fields
     const requiredFields = ['title', 'excerpt', 'content', 'category'] as const;
     const missingFields = requiredFields.filter(field => !body[field]);
-    
+
     if (missingFields.length > 0) {
       return NextResponse.json(
         { error: `Faltan campos obligatorios: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
-    
+
     // Prepare update data with only the fields we want to update
     const updateData: Record<string, any> = {
       title: String(body.title || ''),
@@ -162,27 +177,34 @@ export async function PUT(request: Request) {
       status: body.status === 'published' ? 'published' : 'draft',
       slug: String(body.slug || generateSlug(body.title || '')),
       image: String(body.image || '/images/blog-default.jpg'),
+      image_alt: String(body.image_alt || body.title || ''),
       // Optional fields with defaults
       author: String(body.author || 'Car One Tecnicentro'),
-      read_time: String(body.readTime || '5 min')
+      read_time: String(body.readTime || '5 min'),
+      // Campos SEO
+      meta_description: String(body.meta_description || body.excerpt || ''),
+      focus_keyword: String(body.focus_keyword || ''),
+      tags: body.tags || [],
+      published_date: body.published_date || new Date().toISOString(),
+      featured: Boolean(body.featured)
     };
-    
+
     // Check if updated_at column exists in the table
     try {
       const { data: columnExists } = await supabase.rpc('column_exists', {
         table_name: 'blog_posts',
         column_name: 'updated_at'
       });
-      
+
       if (columnExists) {
         updateData.updated_at = new Date().toISOString();
       }
     } catch (e) {
       console.log('Could not check for updated_at column, proceeding without it');
     }
-    
+
     console.log('Update data prepared:', JSON.stringify(updateData, null, 2));
-    
+
     // First, check if the post exists
     const { data: existingPost, error: fetchError } = await supabase
       .from('blog_posts')
@@ -197,7 +219,7 @@ export async function PUT(request: Request) {
         { status: 404 }
       );
     }
-    
+
     // Update in Supabase
     const { data, error } = await supabase
       .from('blog_posts')
@@ -205,18 +227,18 @@ export async function PUT(request: Request) {
       .eq('id', body.id)
       .select()
       .single();
-    
+
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { 
+        {
           error: 'Error al actualizar el artículo en la base de datos',
           details: process.env.NODE_ENV === 'development' ? error.message : undefined
         },
         { status: 500 }
       );
     }
-    
+
     console.log('Update successful, returning data:', data);
     return NextResponse.json(data);
   } catch (error: any) {
@@ -226,7 +248,7 @@ export async function PUT(request: Request) {
       name: error.name
     });
     return NextResponse.json(
-      { 
+      {
         error: 'Error al actualizar el artículo',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       },
@@ -240,22 +262,22 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Se requiere el ID del artículo' },
         { status: 400 }
       );
     }
-    
+
     // Delete from Supabase
     const { error } = await supabase
       .from('blog_posts')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting blog post:', error);

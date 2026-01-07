@@ -1,192 +1,243 @@
-"use client";
-
-import { useEffect, useState } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { Calendar, User, Clock, ArrowLeft, Phone } from 'lucide-react';
+import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+import { Calendar, User, Clock, ArrowLeft, Phone, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+// Inicializar cliente Supabase para Server Component
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Tipo para el post
 interface BlogPost {
   id: number;
   title: string;
   slug: string;
   excerpt: string;
   content: string;
-  date: string;
   author: string;
-  readTime: string;
+  read_time: string;
   image: string;
+  image_alt?: string;
   category: string;
   status: 'published' | 'draft';
+  meta_description?: string;
+  focus_keyword?: string;
+  tags?: string[];
+  published_date?: string;
+  created_at: string;
 }
 
-export default function BlogPostPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// Función para obtener el post
+async function getPost(slug: string): Promise<BlogPost | null> {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', slug)
+    .single();
 
-  useEffect(() => {
-    const loadPost = async () => {
-      // Reset states
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Validate slug parameter
-        if (!params?.slug) {
-          throw new Error('Slug no proporcionado');
-        }
-        
-        const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-        const decodedSlug = decodeURIComponent(slug);
-        
-        // Fetch the specific post by slug
-        console.log('Fetching post with slug:', decodedSlug);
-        const response = await fetch(`/api/blog?slug=${encodeURIComponent(decodedSlug)}`);
-        
-        console.log('Response status:', response.status);
-        const responseText = await response.text();
-        console.log('Response text:', responseText);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            console.log('Post not found (404)');
-            notFound();
-            return;
-          }
-          throw new Error('Error al cargar el artículo');
-        }
-        
-        const postData = JSON.parse(responseText);
-        console.log('Parsed post data:', postData);
-        
-        if (!postData) {
-          notFound();
-          return;
-        }
-        
-        setPost(postData);
-      } catch (error) {
-        console.error('Error loading post:', error);
-        setError('No se pudo cargar el artículo. Por favor, inténtalo de nuevo más tarde.');
-      } finally {
-        setLoading(false);
-      }
+  if (error || !data) {
+    console.error('Error fetching post:', error);
+    return null;
+  }
+
+  return data as BlogPost;
+}
+
+// Generar Metadata para SEO
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPost(slug);
+
+  if (!post) {
+    return {
+      title: 'Artículo no encontrado | Car One Tecnicentro',
     };
+  }
 
-    loadPost();
-  }, [params]);
+  const title = post.title;
+  const description = post.meta_description || post.excerpt;
+  const url = `https://caronetecnicentro.com/blog/${post.slug}`; // Ajusta tu dominio real
+  const images = post.image ? [{ url: post.image, width: 1200, height: 630, alt: post.image_alt || post.title }] : [];
+  const tags = post.tags || [];
 
-  const openWhatsApp = () => {
-    window.open("https://wa.me/593979606963", "_blank");
+  return {
+    title: `${title} | Blog Car One`,
+    description: description,
+    keywords: [post.focus_keyword, ...tags, post.category].filter(Boolean) as string[],
+    authors: [{ name: post.author || 'Car One Tecnicentro' }],
+    openGraph: {
+      title: title,
+      description: description,
+      url: url,
+      siteName: 'Car One Tecnicentro',
+      locale: 'es_EC',
+      type: 'article',
+      publishedTime: post.published_date || post.created_at,
+      authors: [post.author || 'Car One Tecnicentro'],
+      images: images,
+      section: post.category,
+      tags: tags,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: description,
+      images: images,
+    },
+    alternates: {
+      canonical: url,
+    },
   };
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00CC00]"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <div className="text-red-500 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold mb-2">Error al cargar el artículo</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()}
-            className="bg-[#00CC00] hover:bg-[#00AA00] text-white"
-          >
-            Reintentar
-          </Button>
-        </div>
-      </div>
-    );
-  }
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await getPost(slug);
 
   if (!post) {
     notFound();
   }
 
+  // Formatear fecha
+  const dateObj = new Date(post.published_date || post.created_at);
+  const formattedDate = dateObj.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // Schema.org JSON-LD para Artículo
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    image: post.image ? [post.image] : [],
+    datePublished: post.published_date || post.created_at,
+    dateModified: post.created_at,
+    author: [{
+      '@type': 'Person',
+      name: post.author || 'Car One Tecnicentro',
+    }],
+    publisher: {
+      '@type': 'Organization',
+      name: 'Car One Tecnicentro',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://caronetecnicentro.com/logo.png'
+      }
+    },
+    description: post.meta_description || post.excerpt,
+    articleBody: post.content?.replace(/<[^>]*>?/gm, '')
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Inject Schema.org */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Back to Blog Link */}
-      <div className="bg-gray-50 border-b">
+      <div className="bg-gray-50 border-b sticky top-0 z-10 opacity-95">
         <div className="container mx-auto px-4 py-3">
-          <button 
-            onClick={() => router.push('/blog')}
-            className="flex items-center text-gray-600 hover:text-[#00CC00] transition-colors"
+          <Link
+            href="/blog"
+            className="inline-flex items-center text-gray-600 hover:text-[#00CC00] transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al blog
-          </button>
+          </Link>
         </div>
       </div>
-      
+
       {/* Article Content */}
       <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
-        <article className="prose max-w-none">
-          <Badge variant="outline" className="mb-4 bg-[#00CC00]/10 text-[#00CC00] border-[#00CC00]/30">
-            {post.category}
-          </Badge>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
-          
-          <div className="flex items-center text-gray-500 text-sm mb-8 space-x-4">
-            <div className="flex items-center">
-              <User className="w-4 h-4 mr-1" />
-              <span>{post.author}</span>
+        <article className="prose prose-lg max-w-none prose-green">
+          {/* Header */}
+          <header className="not-prose mb-8">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="outline" className="bg-[#00CC00]/10 text-[#00CC00] border-[#00CC00]/30 text-sm px-3 py-1">
+                {post.category}
+              </Badge>
+              {post.tags && post.tags.map(tag => (
+                <span key={tag} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex items-center">
+                  <Tag className="w-3 h-3 mr-1" />
+                  {tag}
+                </span>
+              ))}
             </div>
-            <div className="flex items-center">
-              <Calendar className="w-4 h-4 mr-1" />
-              <span>{post.date}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              <span>{post.readTime} de lectura</span>
-            </div>
-          </div>
 
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
+              {post.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center text-gray-600 text-sm gap-4 md:gap-6 border-b border-gray-100 pb-6">
+              <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full">
+                <User className="w-4 h-4 mr-2 text-[#00CC00]" />
+                <span className="font-medium">{post.author || 'Car One'}</span>
+              </div>
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                <time dateTime={post.published_date || post.created_at}>{formattedDate}</time>
+              </div>
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                <span>{post.read_time || '5 min'} de lectura</span>
+              </div>
+            </div>
+          </header>
+
+          {/* Featured Image */}
           {post.image && (
-            <div className="relative w-full h-64 md:h-96 mb-8 rounded-lg overflow-hidden shadow-md">
+            <div className="relative w-full h-[300px] md:h-[500px] mb-10 rounded-2xl overflow-hidden shadow-xl not-prose">
               <Image
                 src={post.image}
-                alt={post.title}
+                alt={post.image_alt || post.title}
                 fill
-                className="object-cover"
+                className="object-cover hover:scale-105 transition-transform duration-700"
                 priority
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 768px) 100vw, 900px"
               />
             </div>
           )}
 
-          <div 
-            className="prose max-w-none text-gray-700 leading-relaxed" 
-            dangerouslySetInnerHTML={{ __html: post.content }} 
+          {/* Body */}
+          <div
+            className="
+              prose-headings:font-bold prose-headings:text-gray-900 
+              prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-6
+              prose-a:text-[#00CC00] prose-a:no-underline hover:prose-a:underline
+              prose-strong:text-gray-900 prose-strong:font-bold
+              prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
+              prose-li:mb-2
+              prose-img:rounded-xl prose-img:shadow-lg
+              max-w-none
+            "
+            dangerouslySetInnerHTML={{ __html: post.content }}
           />
-          
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <h3 className="text-xl font-semibold mb-4">¿Necesitas ayuda con tu vehículo?</h3>
-            <p className="text-gray-600 mb-6">
-              En Car One Tecnicentro estamos listos para ayudarte con el mantenimiento y reparación de tu vehículo. 
-              Contamos con técnicos certificados y equipos de última generación.
+
+          {/* CTA Section */}
+          <div className="mt-16 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 md:p-12 text-center text-white shadow-2xl not-prose">
+            <h3 className="text-2xl md:text-3xl font-bold mb-4">¿Te gustó este artículo?</h3>
+            <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
+              En Car One Tecnicentro estamos comprometidos con informarte y ayudarte a mantener tu vehículo en perfectas condiciones.
+              Si tienes dudas o necesitas un servicio, ¡contáctanos hoy mismo!
             </p>
-            <Button 
-              onClick={openWhatsApp}
-              className="bg-[#00CC00] hover:bg-[#00AA00] text-white font-medium py-3 px-8 rounded-full flex items-center space-x-2 transition-colors duration-200 shadow-md hover:shadow-lg"
+            <a
+              href="https://wa.me/593979606963"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center bg-[#00CC00] hover:bg-[#00AA00] text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group"
             >
-              <Phone className="w-4 h-4" />
-              <span>Contactar por WhatsApp</span>
-            </Button>
+              <Phone className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+              <span>Agendar Cita por WhatsApp</span>
+            </a>
           </div>
         </article>
       </main>

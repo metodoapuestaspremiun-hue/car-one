@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from 'react';
 import { Phone, MapPin, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,12 +15,12 @@ interface BlogLayoutProps {
   showFooter?: boolean;
 }
 
-export function BlogLayout({ 
-  children, 
+export function BlogLayout({
+  children,
   title = 'Blog Automotriz Loja',
   description = 'Consejos y tips de mecánica automotriz Loja. Aprende a cuidar tu auto con expertos de Car One Tecnicentro.',
   showHeader = true,
-  showFooter = true 
+  showFooter = true
 }: BlogLayoutProps) {
   const openWhatsApp = () => {
     window.open("https://wa.me/593979606963", "_blank");

@@ -22,6 +22,14 @@ interface BlogPost {
   image: string;
   category: string;
   status: "published" | "draft";
+  // Campos SEO
+  meta_description?: string;
+  focus_keyword?: string;
+  tags?: string[];
+  image_alt?: string;
+  published_date?: string;
+  views_count?: number;
+  featured?: boolean;
 }
 
 // Simple slug generation function if the imported one fails
@@ -82,6 +90,13 @@ export default function AdminPanel() {
     category: string;
     status: 'published' | 'draft';
     slug?: string;
+    // Campos SEO
+    meta_description?: string;
+    focus_keyword?: string;
+    tags?: string[];
+    image_alt?: string;
+    published_date?: string;
+    featured?: boolean;
   };
 
   const [currentPost, setCurrentPost] = useState<PostFormData>({
@@ -94,9 +109,18 @@ export default function AdminPanel() {
     category: "",
     status: "draft" as const,
     slug: "",
+    meta_description: "",
+    focus_keyword: "",
+    tags: [],
+    image_alt: "",
+    published_date: new Date().toISOString().split('T')[0],
+    featured: false,
   });
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("list");
+  const [tagsInput, setTagsInput] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(false);
   const categories = ["Seguridad", "Mantenimiento", "Diagnóstico"];
 
   useEffect(() => {
@@ -107,7 +131,7 @@ export default function AdminPanel() {
         setIsInitialized(true);
       }
     };
-    
+
     fetchPosts();
   }, [isInitialized]);
 
@@ -174,7 +198,7 @@ export default function AdminPanel() {
     </body>
     </html>
     `;
-    
+
     return htmlContent;
   };
 
@@ -190,24 +214,64 @@ export default function AdminPanel() {
     URL.revokeObjectURL(url);
   };
 
+  const handleImageUpload = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    try {
+      setUploadProgress(true);
+      const formData = new FormData();
+      formData.append('file', imageFile);
+
+      const response = await fetch('/api/blog/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al subir la imagen');
+      }
+
+      const data = await response.json();
+      setUploadProgress(false);
+      setImageFile(null);
+      return data.url;
+    } catch (error) {
+      setUploadProgress(false);
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen. Por favor, inténtalo de nuevo.');
+      return null;
+    }
+  };
+
   const handleSavePost = async () => {
     try {
       // Validar campos requeridos
       const requiredFields = ['title', 'excerpt', 'content', 'category'] as const;
       const missingFields = requiredFields.filter(field => !currentPost[field]);
-      
+
       if (missingFields.length > 0) {
         throw new Error(`Por favor completa los campos obligatorios: ${missingFields.join(', ')}`);
+      }
+
+      // Upload image if a new one is selected
+      let imageUrl = currentPost.image;
+      if (imageFile) {
+        const uploadedUrl = await handleImageUpload();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
       }
 
       // Generar slug si no existe
       const postToSave = {
         ...currentPost,
+        image: imageUrl,
         slug: currentPost.slug || generateSlug(currentPost.title),
-        date: new Date().toLocaleDateString('es-ES', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        date: new Date().toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         })
       };
 
@@ -222,7 +286,7 @@ export default function AdminPanel() {
 
       const apiUrl = '/api/blog';
       const method = isEditing && currentPost.id ? 'PUT' : 'POST';
-      const body = isEditing 
+      const body = isEditing
         ? { ...postToSave, id: currentPost.id }
         : postToSave;
 
@@ -250,19 +314,19 @@ export default function AdminPanel() {
           response: responseData
         });
 
-        const errorMessage = responseData?.error || 
-                           responseData?.message || 
-                           `Error ${response.status} al ${isEditing ? 'actualizar' : 'crear'} el post`;
-        
+        const errorMessage = responseData?.error ||
+          responseData?.message ||
+          `Error ${response.status} al ${isEditing ? 'actualizar' : 'crear'} el post`;
+
         throw new Error(errorMessage);
       }
 
       console.log('Operación exitosa:', responseData);
-      
+
       // Recargar la lista de posts
       const updatedPosts = await loadPosts();
       setPosts(updatedPosts);
-      
+
       // Generate and download HTML if published
       if (postToSave.status === 'published') {
         const postWithId = {
@@ -272,10 +336,10 @@ export default function AdminPanel() {
         const htmlContent = generateStaticHtml(postWithId as BlogPost);
         downloadHtmlFile(htmlContent, `${postToSave.slug}.html`);
       }
-      
+
       // Show success message
       alert(`Post ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-      
+
       // Reset form
       setCurrentPost({
         title: "",
@@ -286,12 +350,20 @@ export default function AdminPanel() {
         image: "/images/blog-default.jpg",
         category: "",
         status: "draft",
-        slug: ""
+        slug: "",
+        meta_description: "",
+        focus_keyword: "",
+        tags: [],
+        image_alt: "",
+        published_date: new Date().toISOString().split('T')[0],
+        featured: false,
       });
-      
+      setImageFile(null);
+      setTagsInput("");
+
       // Switch to list tab
       setActiveTab("list");
-      
+
       return responseData;
     } catch (error) {
       console.error('Error al guardar el post:', error);
@@ -305,6 +377,7 @@ export default function AdminPanel() {
       // Ensure we have a slug when editing
       slug: post.slug || generateSlug(post.title)
     });
+    setTagsInput(post.tags?.join(', ') || "");
     setIsEditing(true);
     setActiveTab("create");
   };
@@ -314,7 +387,7 @@ export default function AdminPanel() {
     const slug = post.slug || generateSlug(post.title);
     window.open(`/blog/${encodeURIComponent(slug)}`, '_blank');
   };
-  
+
   const handleDownloadHtml = (post: BlogPost) => {
     const postWithId = {
       ...post,
@@ -330,7 +403,7 @@ export default function AdminPanel() {
       alert('Error: No se pudo identificar el post a eliminar');
       return;
     }
-    
+
     if (confirm('¿Estás seguro de que deseas eliminar este artículo?')) {
       try {
         const response = await fetch(`/api/blog?id=${id}`, {
@@ -361,7 +434,16 @@ export default function AdminPanel() {
       image: "",
       category: "",
       status: "draft",
+      slug: "",
+      meta_description: "",
+      focus_keyword: "",
+      tags: [],
+      image_alt: "",
+      published_date: new Date().toISOString().split('T')[0],
+      featured: false,
     });
+    setImageFile(null);
+    setTagsInput("");
     setIsEditing(false);
     setActiveTab("create");
   };
@@ -420,26 +502,26 @@ export default function AdminPanel() {
                             <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
                           </div>
                           <div className="flex space-x-2 ml-4">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleEditPost(post)}
                               className="mr-2"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleViewPost(post)}
                               className="text-blue-600 hover:text-blue-700"
                               title="Vista previa"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleDownloadHtml(post)}
                               className="text-green-600 hover:text-green-700"
                               title="Descargar HTML"
@@ -468,24 +550,33 @@ export default function AdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>{isEditing ? "Editar" : "Crear Nuevo"} Post</CardTitle>
+                <p className="text-sm text-gray-500 mt-2">
+                  Completa todos los campos para optimizar el SEO de tu artículo
+                </p>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+              <CardContent className="space-y-8">
+                {/* Información Básica */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Información Básica</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Título <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         value={currentPost.title || ""}
-                        onChange={(e) => setCurrentPost({...currentPost, title: e.target.value})}
-                        placeholder="Título del artículo"
+                        onChange={(e) => setCurrentPost({ ...currentPost, title: e.target.value })}
+                        placeholder="Ej: 5 Señales de que Necesitas Cambiar las Pastillas de Freno"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categoría <span className="text-red-500">*</span>
+                      </label>
                       <Select
                         value={currentPost.category || ""}
-                        onValueChange={(value) => setCurrentPost({...currentPost, category: value})}
+                        onValueChange={(value) => setCurrentPost({ ...currentPost, category: value })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar categoría" />
@@ -500,75 +591,301 @@ export default function AdminPanel() {
                       </Select>
                     </div>
 
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Extracto / Resumen <span className="text-red-500">*</span>
+                      </label>
+                      <Textarea
+                        value={currentPost.excerpt || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, excerpt: e.target.value })}
+                        placeholder="Resumen breve del artículo (se muestra en la lista de posts)"
+                        rows={3}
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SEO */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
+                    🔍 Optimización SEO
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Meta Descripción (SEO)
+                      </label>
+                      <Textarea
+                        value={currentPost.meta_description || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, meta_description: e.target.value })}
+                        placeholder="Descripción optimizada para motores de búsqueda (155-160 caracteres recomendados)"
+                        rows={2}
+                        maxLength={160}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {(currentPost.meta_description || "").length}/160 caracteres
+                      </p>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">URL de Imagen</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Palabra Clave Principal (SEO)
+                      </label>
                       <Input
-                        value={currentPost.image || ""}
-                        onChange={(e) => setCurrentPost({...currentPost, image: e.target.value})}
-                        placeholder="/images/ejemplo.jpg"
+                        value={currentPost.focus_keyword || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, focus_keyword: e.target.value })}
+                        placeholder="Ej: pastillas de freno"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tags (separados por coma)
+                      </label>
+                      <Input
+                        value={tagsInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setTagsInput(value);
+                          const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                          setCurrentPost({ ...currentPost, tags: tagsArray });
+                        }}
+                        placeholder="Ej: mantenimiento, seguridad, frenos"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {currentPost.tags?.length || 0} tags
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Publicación */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
+                    📅 Configuración de Publicación
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha de Publicación
+                      </label>
+                      <Input
+                        type="date"
+                        value={currentPost.published_date || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, published_date: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Slug (URL personalizada) <span className="ml-2 text-xs text-blue-600">Funcional en producción</span>
+                      </label>
+                      <Input
+                        value={currentPost.slug || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, slug: e.target.value })}
+                        placeholder="Se genera automáticamente desde el título"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        URL: /blog/{currentPost.slug || generateSlug(currentPost.title || "tu-titulo")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Multimedia */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
+                    🖼️ Imagen Principal
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Subir Imagen desde tu dispositivo
+                      </label>
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setImageFile(file);
+                        }}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Formatos: JPG, PNG, WebP, GIF (Máx: 5MB)
+                      </p>
+
+                      {imageFile && (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                          <p className="text-xs text-green-700">
+                            ✓ Archivo seleccionado: {imageFile.name}
+                          </p>
+                        </div>
+                      )}
+
+                      {uploadProgress && (
+                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                          <p className="text-xs text-blue-700">
+                            Subiendo imagen...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        URL de Imagen (alternativa)
+                      </label>
+                      <Input
+                        value={currentPost.image || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, image: e.target.value })}
+                        placeholder="/images/ejemplo.jpg o URL completa"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Usa esto si prefieres una URL en lugar de subir
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Texto Alternativo de la Imagen (SEO + Accesibilidad)
+                      </label>
+                      <Input
+                        value={currentPost.image_alt || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, image_alt: e.target.value })}
+                        placeholder="Ej: Mecánico revisando pastillas de freno en Car One Tecnicentro"
+                      />
+                    </div>
+
+                    {/* Preview de imagen */}
+                    {(currentPost.image || imageFile) && (
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Vista Previa
+                        </label>
+                        <div className="border rounded p-2">
+                          <img
+                            src={imageFile ? URL.createObjectURL(imageFile) : currentPost.image}
+                            alt="Preview"
+                            className="w-full max-w-md h-48 object-cover rounded"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contenido */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                    ✍️ Contenido del Artículo
+                  </h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contenido <span className="text-red-500">*</span>
+                      <span className="ml-2 text-xs text-gray-500">(Usa HTML para formato)</span>
+                    </label>
+                    <Textarea
+                      value={currentPost.content || ""}
+                      onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
+                      placeholder={`<h2>Título de Sección</h2>
+<p>Tu contenido aquí con <strong>negritas</strong> y formato HTML...</p>
+
+<h3>Subtítulo</h3>
+<ul>
+  <li>Punto 1</li>
+  <li>Punto 2</li>
+</ul>`}
+                      rows={12}
+                      className="min-h-[400px] font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {(currentPost.content || "").length} caracteres |
+                      {Math.ceil((currentPost.content || "").split(/\s+/).length / 200)} min lectura aprox.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Configuración Adicional */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                    ⚙️ Configuración Adicional
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Autor
+                      </label>
+                      <Input
+                        value={currentPost.author || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, author: e.target.value })}
+                        placeholder="Nombre del autor"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tiempo de Lectura
+                      </label>
+                      <Input
+                        value={currentPost.readTime || ""}
+                        onChange={(e) => setCurrentPost({ ...currentPost, readTime: e.target.value })}
+                        placeholder="Ej: 5 min"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Estado
+                      </label>
                       <Select
                         value={currentPost.status}
-                        onValueChange={(value) => 
-                          setCurrentPost({...currentPost, status: value as "published" | "draft"})
+                        onValueChange={(value) =>
+                          setCurrentPost({ ...currentPost, status: value as "published" | "draft" })
                         }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="draft">Borrador</SelectItem>
-                          <SelectItem value="published">Publicado</SelectItem>
+                          <SelectItem value="draft">📝 Borrador</SelectItem>
+                          <SelectItem value="published">✅ Publicado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Extracto <span className="text-red-500">*</span>
+                    <div className="md:col-span-3">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={currentPost.featured || false}
+                          onChange={(e) => setCurrentPost({ ...currentPost, featured: e.target.checked })}
+                          className="w-4 h-4 text-green-600"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          ⭐ Marcar como artículo destacado
+                        </span>
                       </label>
-                      <Textarea
-                        value={currentPost.excerpt || ""}
-                        onChange={(e) => setCurrentPost({...currentPost, excerpt: e.target.value})}
-                        placeholder="Resumen del artículo..."
-                        rows={4}
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contenido <span className="text-red-500">*</span>
-                      </label>
-                      <Textarea
-                        value={currentPost.content || ""}
-                        onChange={(e) => setCurrentPost({...currentPost, content: e.target.value})}
-                        placeholder="Contenido completo del artículo..."
-                        rows={8}
-                        className="min-h-[300px]"
-                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-4 pt-4">
+                {/* Botones de Acción */}
+                <div className="flex justify-end space-x-4 pt-4 border-t">
                   <Button
                     variant="outline"
                     onClick={() => setActiveTab("list")}
+                    disabled={uploadProgress}
                   >
                     Cancelar
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleSavePost}
-                    className="bg-[#00FF00] hover:bg-[#00CC00] text-black"
+                    disabled={uploadProgress}
+                    className="bg-[#00FF00] hover:bg-[#00CC00] text-black font-semibold"
                   >
-                    {isEditing ? "Actualizar" : "Publicar"} Artículo
+                    {uploadProgress ? "Subiendo imagen..." : isEditing ? "Actualizar Artículo" : "Publicar Artículo"}
                   </Button>
                 </div>
               </CardContent>
