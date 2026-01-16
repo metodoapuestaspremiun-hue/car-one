@@ -16,7 +16,7 @@ export function MobileNav() {
   }
 
   return (
-    <div className="md:hidden">
+    <div>
       {/* Hamburger Button */}
       <Button
         variant="ghost"

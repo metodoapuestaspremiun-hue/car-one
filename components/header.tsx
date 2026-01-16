@@ -14,15 +14,15 @@ export function Header() {
         <div className="container mx-auto px-2 py-3 min-h-[56px]">
           <div className="flex items-center justify-between w-full">
             {/* Primera fila - Logo, dirección y menú móvil */}
-            <div className="flex items-center justify-between w-full md:w-auto">
-              {/* Logo más pequeño */}
-              <div className="flex-shrink-0">
-                <Link href="/" className="block relative w-[90px] h-[30px] md:w-[140px] md:h-[50px]">
+            <div className="flex items-center justify-between w-full lg:w-auto">
+              {/* Logo */}
+              <div className="flex-shrink-0 mr-2 lg:mr-0">
+                <Link href="/" className="block relative w-[110px] h-[40px] lg:w-[170px] lg:h-[70px]">
                   <Image
-                    src="/LOGO.png"
+                    src="/LOGO-v2.png"
                     alt="Logo Car One"
                     fill
-                    sizes="(max-width: 768px) 90px, 140px"
+                    sizes="(max-width: 1024px) 110px, 170px"
                     style={{ objectFit: 'contain' }}
                     className="h-auto"
                     priority
@@ -30,41 +30,32 @@ export function Header() {
                 </Link>
               </div>
 
-              {/* Dirección en móvil - Texto más pequeño y sin recorte */}
-              <div className="md:hidden text-center flex-1 min-w-0 px-1">
-                <div className="text-white text-[10px] font-medium leading-tight">
+              {/* Dirección en móvil/tablet - Texto pequeño */}
+              <div className="lg:hidden text-center flex-1 min-w-0 px-1">
+                <div className="text-white text-[10px] sm:text-xs font-medium leading-tight truncate">
                   Av. California y Houston
                 </div>
               </div>
 
-              {/* Botón de reserva en móvil - Más compacto */}
-              <div className="md:hidden flex-shrink-0">
+              {/* Botón de reserva en móvil/tablet - Más compacto */}
+              <div className="lg:hidden flex-shrink-0 mx-1">
                 <a href="https://wa.me/593979606963" target="_blank" rel="noopener noreferrer" className="block">
-                  <Button className="bg-[#00FF00] hover:bg-[#00CC00] text-black px-1.5 py-0.5 text-[10px] leading-none h-auto">
+                  <Button className="bg-[#00FF00] hover:bg-[#00CC00] text-black px-2 py-1 text-[10px] sm:text-xs leading-none h-auto whitespace-nowrap">
                     Reserva tu Turno
                   </Button>
                 </a>
               </div>
 
-              {/* Menú móvil */}
-              <div className="flex items-center md:hidden ml-1">
+              {/* Menú hamburguesa (Móvil y Tablet) */}
+              <div className="flex items-center lg:hidden ml-1">
                 <MobileNav />
               </div>
             </div>
 
-            {/* Información de contacto - Solo en pantallas pequeñas de escritorio */}
-            <div className="hidden md:block lg:hidden ml-2 mr-4">
-              <div className="text-white text-xs leading-tight">
-                <div>Av. California y Houston</div>
-                <div className="text-[#00FF00] font-medium">097 960 6963</div>
-                <div className="text-gray-300 text-[11px]">Abierto 8:00 - 18:00</div>
-              </div>
-            </div>
-
-            {/* Navegación y botón */}
-            <div className="flex-1 flex items-center justify-end gap-2 md:gap-4 lg:gap-8">
-              {/* Dirección y contacto - Solo en escritorio grande */}
-              <div className="hidden lg:block text-right mr-2 lg:mr-6">
+            {/* Navegación y botón (Solo Desktop Grande) */}
+            <div className="hidden lg:flex flex-1 items-center justify-end gap-4 xl:gap-8">
+              {/* Dirección y contacto */}
+              <div className="text-right mr-2 xl:mr-6">
                 <div className="text-white text-sm whitespace-nowrap">
                   Av. California y Houston
                   <span className="text-gray-400"> • Sector Parque Industrial</span>
@@ -77,8 +68,9 @@ export function Header() {
                   <span className="text-gray-300 whitespace-nowrap">Abierto 8:00 - 18:00</span>
                 </div>
               </div>
-              {/* Menú horizontal solo en escritorio */}
-              <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 flex-wrap justify-center">
+
+              {/* Menú horizontal */}
+              <nav className="flex items-center space-x-4 xl:space-x-8 flex-wrap justify-center">
                 <a href="/" className="text-white hover:text-[#00FF00] transition-colors font-medium whitespace-nowrap">Home</a>
                 <div className="relative group">
                   <button className="text-white hover:text-[#00FF00] transition-colors font-medium flex items-center">
@@ -108,16 +100,13 @@ export function Header() {
                 <a href="/blog" className="text-white hover:text-[#00FF00] transition-colors font-medium whitespace-nowrap">Blog</a>
                 <a href="/contacto" className="text-white hover:text-[#00FF00] transition-colors font-medium whitespace-nowrap">Contacto</a>
               </nav>
-              {/* Botón solo en escritorio */}
-              <a href="https://wa.me/593979606963" target="_blank" rel="noopener noreferrer" className="hidden md:block flex-shrink-0">
-                <Button className="bg-[#00FF00] hover:bg-[#00CC00] text-black px-2 py-1 text-xs sm:text-base whitespace-nowrap">
+
+              {/* Botón Desktop */}
+              <a href="https://wa.me/593979606963" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                <Button className="bg-[#00FF00] hover:bg-[#00CC00] text-black px-4 py-2 text-base whitespace-nowrap">
                   Reserva tu Turno
                 </Button>
               </a>
-              {/* Menú hamburguesa solo en móvil (el botón se movió arriba) */}
-              <div className="hidden md:flex items-center gap-2">
-                <MobileNav />
-              </div>
             </div>
           </div>
         </div>
