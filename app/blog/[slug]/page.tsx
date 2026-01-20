@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Calendar, User, Clock, ArrowLeft, Phone, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import ScrollHandler from './ScrollHandler';
 
 // Inicializar cliente Supabase para Server Component
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -137,6 +138,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <ScrollHandler />
+
       {/* Inject Schema.org */}
       <script
         type="application/ld+json"

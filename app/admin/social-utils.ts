@@ -14,21 +14,25 @@ export function slugify(text: string): string {
 }
 
 /**
- * Injects id attributes into <h2> tags if they don't have one.
+ * Injects id attributes into <h2>, <h3>, <h4> tags if they don't have one.
  */
 export function injectAnchorIds(html: string): { modifiedHtml: string, anchors: { text: string, slug: string }[] } {
-    const h2Regex = /<h2([^>]*)>(.*?)<\/h2>/gi;
+    // Regex matches h2, h3, or h4 opening tags, attributes, content, and closing tags.
+    const hRegex = /<(h[2-4])([^>]*)>(.*?)<\/\1>/gi;
     const anchors: { text: string, slug: string }[] = [];
 
-    const modifiedHtml = html.replace(h2Regex, (match, attributes, content) => {
-        const text = content.replace(/<[^>]*>?/gm, '').trim();
+    const modifiedHtml = html.replace(hRegex, (match, tag, attributes, content) => {
+        const text = content.replace(/<[^>]*>?/gm, '').trim(); // Remove nested tags for text extraction
         const idMatch = attributes.match(/id=["'](.*?)["']/i);
         const currentId = idMatch ? idMatch[1] : slugify(text);
 
-        anchors.push({ text, slug: currentId });
+        if (text) {
+            anchors.push({ text, slug: currentId });
+        }
 
         if (!idMatch) {
-            return `<h2 id="${currentId}"${attributes}>${content}</h2>`;
+            // Reconstruct the tag with the ID injected
+            return `<${tag} id="${currentId}"${attributes}>${content}</${tag}>`;
         }
         return match;
     });
@@ -42,7 +46,7 @@ export function injectAnchorIds(html: string): { modifiedHtml: string, anchors: 
 export function generateSocialCopy(title: string, excerpt: string, anchors: { text: string, slug: string }[], postSlug: string) {
     const baseUrl = "https://mecanicaautomotrizloja.com/blog";
 
-    return anchors.slice(0, 3).map((anchor, idx) => {
+    return anchors.slice(0, 5).map((anchor, idx) => {
         const prodLink = `${baseUrl}/${postSlug}#${anchor.slug}`;
 
         // Post A: Curiosidad / Problema

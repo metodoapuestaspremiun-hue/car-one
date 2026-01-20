@@ -19,7 +19,7 @@ export default function LoginPage() {
 
         if (username === "CarOneTecnicentro" && password === "Contraseña123.") {
             // Guardar sesión simple
-            localStorage.setItem("admin_authenticated", "true");
+            localStorage.setItem("admin_auth", "true");
             // Redirigir al admin
             router.push("/admin");
         } else {
