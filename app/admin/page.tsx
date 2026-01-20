@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Edit, Trash2, Eye, Calendar, Download, LogOut } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, Calendar, Download, LogOut, Share2, Copy, Check, ExternalLink, RefreshCw } from "lucide-react"
 
 interface BlogPost {
   id?: number;
@@ -139,6 +139,42 @@ export default function AdminPanel() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
   const categories = ["Seguridad", "Mantenimiento", "Diagnóstico"];
+
+  // Social Generator State
+  const [socialSlug, setSocialSlug] = useState("");
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [socialResults, setSocialResults] = useState<any>(null);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const handleGenerateSocial = async (sync = false) => {
+    if (!socialSlug) return;
+    setSocialLoading(true);
+    try {
+      const response = await fetch('/api/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: socialSlug, sync })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSocialResults(data);
+        if (sync) alert("Sincronización completada con éxito");
+      } else {
+        alert(data.error || "Error al generar posts");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error de conexión");
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(id);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -490,9 +526,10 @@ export default function AdminPanel() {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="list">Lista de Posts</TabsTrigger>
             <TabsTrigger value="create">{isEditing ? "Editar" : "Crear"} Post</TabsTrigger>
+            <TabsTrigger value="social">Generador Social</TabsTrigger>
           </TabsList>
 
           <TabsContent value="list" className="mt-6">
@@ -911,6 +948,106 @@ export default function AdminPanel() {
                     {uploadProgress ? "Subiendo imagen..." : isEditing ? "Actualizar Artículo" : "Publicar Artículo"}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="social" className="mt-6">
+            <Card className="border-none shadow-lg bg-white overflow-hidden">
+              <div className="h-2 bg-[#00CC00]" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                  <Share2 className="w-7 h-7 text-[#00CC00]" />
+                  Generador de Posts
+                </CardTitle>
+                <p className="text-gray-500">Selecciona un artículo y obtén tus textos para redes sociales al instante.</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-bold text-gray-700">1. Escoge el Artículo</label>
+                    <Select value={socialSlug} onValueChange={setSocialSlug}>
+                      <SelectTrigger className="h-12 text-lg border-2 focus:ring-[#00CC00]/20">
+                        <SelectValue placeholder="Busca tu artículo publicado..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {posts.filter(p => p.status === 'published').map(post => (
+                          <SelectItem key={post.slug} value={post.slug}>{post.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    <Button
+                      onClick={() => handleGenerateSocial(true)}
+                      disabled={socialLoading || !socialSlug}
+                      className="h-14 text-lg font-bold bg-[#00CC00] text-black hover:bg-[#00AA00] transition-all transform hover:scale-[1.01] active:scale-[0.99] shadow-md"
+                    >
+                      {socialLoading ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin mr-3" />
+                          Generando contenido...
+                        </>
+                      ) : (
+                        "🚀 EMPEZAR GENERACIÓN"
+                      )}
+                    </Button>
+                    <p className="text-xs text-center text-gray-400 italic">
+                      Se generarán automáticante los copys y se activarán los enlaces en la web.
+                    </p>
+                  </div>
+                </div>
+
+                {socialResults && (
+                  <div className="space-y-6 pt-6 border-t animate-in fade-in zoom-in-95 duration-500">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {socialResults.posts.map((post: any, idx: number) => (
+                        <div key={idx} className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-100 relative group overflow-hidden">
+                          <div className="absolute top-0 right-0 p-3">
+                            <Badge className="bg-white text-gray-500 font-bold border-gray-200">OPCIÓN {idx + 1}</Badge>
+                          </div>
+
+                          <div className="space-y-4">
+                            <h4 className="text-xs font-black text-[#00CC00] uppercase tracking-[0.2em]">Post Sugerido</h4>
+
+                            <div className="space-y-2">
+                              <div className="p-4 bg-white rounded-xl border-2 border-gray-100 text-gray-800 leading-relaxed min-h-[100px] text-[15px] font-medium shadow-sm">
+                                {post.postB}
+                              </div>
+                              <Button
+                                className="w-full bg-black text-white hover:bg-gray-800 h-11 font-bold rounded-xl flex items-center justify-center gap-2"
+                                onClick={() => copyToClipboard(post.postB, `b-${idx}`)}
+                              >
+                                {copiedText === `b-${idx}` ? (
+                                  <><Check className="w-4 h-4 text-[#00CC00]" /> Copiado</>
+                                ) : (
+                                  <><Copy className="w-4 h-4" /> Copiar Texto</>
+                                )}
+                              </Button>
+                            </div>
+
+                            <div className="pt-2">
+                              <a
+                                href={post.localLink}
+                                target="_blank"
+                                className="text-sm text-blue-600 hover:text-blue-800 font-bold flex items-center gap-2 justify-center py-3 bg-blue-50 rounded-xl transition-colors"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Probar Link Local (Verificar Scroll)
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="bg-gray-900 border-2 border-dashed border-gray-700 p-4 rounded-xl">
+                      <p className="text-xs text-gray-400 font-mono break-all text-center">
+                        <span className="text-[#00CC00] font-bold">LINK FINAL:</span> {socialResults.posts[0].prodLink}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
