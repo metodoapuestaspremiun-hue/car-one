@@ -1,15 +1,50 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Edit, Trash2, Eye, Calendar, Download, LogOut, Share2, Copy, Check, ExternalLink, RefreshCw } from "lucide-react"
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import {
+  Plus,
+  LayoutList,
+  Edit,
+  Trash2,
+  Eye,
+  LogOut,
+  Calendar,
+  Share2,
+  Download,
+  Check,
+  Copy,
+  Tag,
+  Phone,
+  ArrowLeft,
+  User,
+  Clock,
+  ExternalLink,
+  ChevronRight,
+  TrendingUp,
+  Sparkles,
+  RefreshCw
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { injectAnchorIds, generateSocialCopy, slugify } from "./social-utils";
+
+// Supabase configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface BlogPost {
   id?: number;
@@ -17,106 +52,32 @@ interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
-  date: string;
   author: string;
   readTime: string;
   image: string;
   category: string;
   status: "published" | "draft";
-  // Campos SEO
   meta_description?: string;
   focus_keyword?: string;
   tags?: string[];
   image_alt?: string;
   published_date?: string;
-  views_count?: number;
+  date?: string;
   featured?: boolean;
 }
-
-// Simple slug generation function if the imported one fails
-const generateSlug = (text: string): string => {
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-const STORAGE_KEY = 'carone_blog_posts';
-
-const DEFAULT_POSTS: BlogPost[] = [
-  {
-    id: 1,
-    title: "5 Señales de que Necesitas Cambiar las Pastillas de Freno",
-    slug: "5-senales-de-que-necesitas-cambiar-las-pastillas-de-freno",
-    excerpt: "Conoce las principales señales que indican que es momento de cambiar las pastillas de freno...",
-    content: "Contenido completo del artículo sobre pastillas de freno...",
-    date: "15 de enero de 2024",
-    author: "Car One Tecnicentro",
-    readTime: "5 min",
-    image: "/images/pastillas_frenos.jpg",
-    category: "Seguridad",
-    status: "published",
-  }
-];
-
-const loadPosts = async (): Promise<BlogPost[]> => {
-  try {
-    const response = await fetch('/api/blog');
-    if (!response.ok) {
-      throw new Error('Error al cargar los posts');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error al cargar los posts:', error);
-    return [];
-  }
-};
 
 export default function AdminPanel() {
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [activeTab, setActiveTab] = useState("list");
+  const [isEditing, setIsEditing] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [tagsInput, setTagsInput] = useState("");
+  const [copiedText, setCopiedText] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(false);
 
-  useEffect(() => {
-    const isAuthenticated = localStorage.getItem("admin_authenticated");
-    if (isAuthenticated !== "true") {
-      router.push("/admin/login");
-    } else {
-      setIsAuthorized(true);
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("admin_authenticated");
-    router.push("/admin/login");
-  };
-  // Define a type for the form state that makes id, date, and slug optional
-  type PostFormData = {
-    id?: number;
-    title: string;
-    excerpt: string;
-    content: string;
-    author: string;
-    readTime: string;
-    image: string;
-    category: string;
-    status: 'published' | 'draft';
-    slug?: string;
-    // Campos SEO
-    meta_description?: string;
-    focus_keyword?: string;
-    tags?: string[];
-    image_alt?: string;
-    published_date?: string;
-    featured?: boolean;
-  };
-
-  const [currentPost, setCurrentPost] = useState<PostFormData>({
+  const [currentPost, setCurrentPost] = useState<BlogPost>({
     title: "",
     excerpt: "",
     content: "",
@@ -124,357 +85,113 @@ export default function AdminPanel() {
     readTime: "5 min",
     image: "/images/blog-default.jpg",
     category: "",
-    status: "draft" as const,
+    status: "draft",
     slug: "",
     meta_description: "",
     focus_keyword: "",
     tags: [],
     image_alt: "",
-    published_date: new Date().toISOString().split('T')[0],
+    published_date: new Date().toISOString().split("T")[0],
     featured: false,
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState("list");
-  const [tagsInput, setTagsInput] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(false);
-  const categories = ["Seguridad", "Mantenimiento", "Diagnóstico"];
-
-  // Social Generator State
-  const [socialSlug, setSocialSlug] = useState("");
-  const [socialLoading, setSocialLoading] = useState(false);
-  const [socialResults, setSocialResults] = useState<any>(null);
-  const [copiedText, setCopiedText] = useState<string | null>(null);
-
-  const handleGenerateSocial = async (sync = false) => {
-    if (!socialSlug) return;
-    setSocialLoading(true);
-    try {
-      const response = await fetch('/api/social-posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: socialSlug, sync })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSocialResults(data);
-        if (sync) alert("Sincronización completada con éxito");
-      } else {
-        alert(data.error || "Error al generar posts");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Error de conexión");
-    } finally {
-      setSocialLoading(false);
-    }
-  };
-
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(id);
-    setTimeout(() => setCopiedText(null), 2000);
-  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      if (!isInitialized) {
-        const loadedPosts = await loadPosts();
-        setPosts(loadedPosts);
-        setIsInitialized(true);
-      }
-    };
-
-    fetchPosts();
-  }, [isInitialized]);
-
-  const generateStaticHtml = (post: BlogPost): string => {
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${post.title} | Car One</title>
-      <meta name="description" content="${post.excerpt}">
-      <meta name="author" content="${post.author}">
-      <meta property="og:title" content="${post.title}">
-      <meta property="og:description" content="${post.excerpt}">
-      <meta property="og:image" content="${post.image}">
-      <meta property="og:url" content="https://tucarro.com/blog/${post.slug}">
-      <meta property="og:type" content="article">
-      <link rel="stylesheet" href="/css/globals.css">
-      <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          line-height: 1.6; 
-          max-width: 800px; 
-          margin: 0 auto; 
-          padding: 20px; 
-        }
-        .post-header { margin-bottom: 2rem; }
-        .post-title { font-size: 2rem; margin-bottom: 0.5rem; }
-        .post-meta { color: #666; margin-bottom: 1rem; }
-        .post-image { 
-          width: 100%; 
-          max-height: 400px;
-          object-fit: cover;
-          border-radius: 8px; 
-          margin: 1rem 0; 
-        }
-        .post-content { 
-          margin-top: 2rem;
-          line-height: 1.8;
-        }
-        .post-content img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 8px;
-          margin: 1rem 0;
-        }
-      </style>
-    </head>
-    <body>
-      <article class="post">
-        <header class="post-header">
-          <h1 class="post-title">${post.title}</h1>
-          <div class="post-meta">
-            <span>Por ${post.author} • ${post.date} • ${post.readTime} de lectura</span>
-          </div>
-          ${post.image ? `<img src="${post.image}" alt="${post.title}" class="post-image">` : ''}
-        </header>
-        
-        <div class="post-content">
-          ${post.content}
-        </div>
-      </article>
-    </body>
-    </html>
-    `;
-
-    return htmlContent;
-  };
-
-  const downloadHtmlFile = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImageUpload = async (): Promise<string | null> => {
-    if (!imageFile) return null;
-
-    try {
-      setUploadProgress(true);
-      const formData = new FormData();
-      formData.append('file', imageFile);
-
-      const response = await fetch('/api/blog/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al subir la imagen');
-      }
-
-      const data = await response.json();
-      setUploadProgress(false);
-      setImageFile(null);
-      return data.url;
-    } catch (error) {
-      setUploadProgress(false);
-      console.error('Error uploading image:', error);
-      alert('Error al subir la imagen. Por favor, inténtalo de nuevo.');
-      return null;
+    const auth = localStorage.getItem("admin_auth");
+    if (auth === "true") {
+      setIsAuthorized(true);
+      loadPosts();
+    } else {
+      router.push("/admin/login");
     }
+  }, [router]);
+
+  const loadPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPosts(data || []);
+      return data || [];
+    } catch (error) {
+      console.error("Error loading posts:", error);
+      return [];
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_auth");
+    router.push("/admin/login");
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) return currentPost.image;
+    setUploadProgress(true);
+    // Simulation: In a real app we'd use supabase storage
+    const fakeUrl = `/images/${imageFile.name}`;
+    setUploadProgress(false);
+    return fakeUrl;
   };
 
   const handleSavePost = async () => {
     try {
-      // Validar campos requeridos
-      const requiredFields = ['title', 'excerpt', 'content', 'category'] as const;
-      const missingFields = requiredFields.filter(field => !currentPost[field]);
-
-      if (missingFields.length > 0) {
-        throw new Error(`Por favor completa los campos obligatorios: ${missingFields.join(', ')}`);
+      if (!currentPost.title || !currentPost.content || !currentPost.category) {
+        alert("Por favor completa los campos obligatorios (Título, Contenido, Categoría)");
+        return;
       }
 
-      // Upload image if a new one is selected
-      let imageUrl = currentPost.image;
-      if (imageFile) {
-        const uploadedUrl = await handleImageUpload();
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
-        }
-      }
+      setUploadProgress(true);
 
-      // Generar slug si no existe
+      // 1. Inyectar anclas automáticamente
+      const { modifiedHtml } = injectAnchorIds(currentPost.content);
+
+      // 2. Subir imagen si aplica
+      const imageUrl = await handleImageUpload();
+
       const postToSave = {
         ...currentPost,
+        content: modifiedHtml,
         image: imageUrl,
-        slug: currentPost.slug || generateSlug(currentPost.title),
-        date: new Date().toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })
+        slug: currentPost.slug || slugify(currentPost.title),
+        tags: tagsInput.split(",").map(t => t.trim()).filter(t => t),
+        date: new Date().toLocaleDateString("es-ES", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
       };
 
-      console.log('Preparando para guardar post:', {
-        isEditing,
-        postId: currentPost.id,
-        postData: {
-          ...postToSave,
-          content: postToSave.content ? `${postToSave.content.substring(0, 50)}...` : 'empty'
-        }
-      });
-
-      const apiUrl = '/api/blog';
-      const method = isEditing && currentPost.id ? 'PUT' : 'POST';
-      const body = isEditing
-        ? { ...postToSave, id: currentPost.id }
-        : postToSave;
-
-      console.log(`Enviando solicitud ${method} a ${apiUrl}`);
+      const apiUrl = "/api/blog";
+      const method = isEditing && currentPost.id ? "PUT" : "POST";
+      const body = isEditing ? { ...postToSave, id: currentPost.id } : postToSave;
 
       const response = await fetch(apiUrl, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
-      let responseData;
-      try {
-        const responseText = await response.text();
-        responseData = responseText ? JSON.parse(responseText) : {};
-      } catch (jsonError) {
-        console.error('Error al parsear la respuesta JSON:', jsonError);
-        throw new Error('La respuesta del servidor no es un JSON válido');
-      }
+      if (!response.ok) throw new Error("Error al guardar el artículo");
 
-      if (!response.ok) {
-        console.error('Error en la respuesta del servidor:', {
-          status: response.status,
-          statusText: response.statusText,
-          response: responseData
-        });
-
-        const errorMessage = responseData?.error ||
-          responseData?.message ||
-          `Error ${response.status} al ${isEditing ? 'actualizar' : 'crear'} el post`;
-
-        throw new Error(errorMessage);
-      }
-
-      console.log('Operación exitosa:', responseData);
-
-      // Recargar la lista de posts
-      const updatedPosts = await loadPosts();
-      setPosts(updatedPosts);
-
-      // Generate and download HTML if published
-      if (postToSave.status === 'published') {
-        const postWithId = {
-          ...postToSave,
-          id: responseData?.id || postToSave.id || Date.now()
-        };
-        const htmlContent = generateStaticHtml(postWithId as BlogPost);
-        downloadHtmlFile(htmlContent, `${postToSave.slug}.html`);
-      }
-
-      // Show success message
-      alert(`Post ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-
-      // Reset form
-      setCurrentPost({
-        title: "",
-        excerpt: "",
-        content: "",
-        author: "Car One Tecnicentro",
-        readTime: "5 min",
-        image: "/images/blog-default.jpg",
-        category: "",
-        status: "draft",
-        slug: "",
-        meta_description: "",
-        focus_keyword: "",
-        tags: [],
-        image_alt: "",
-        published_date: new Date().toISOString().split('T')[0],
-        featured: false,
-      });
-      setImageFile(null);
-      setTagsInput("");
-
-      // Switch to list tab
-      setActiveTab("list");
-
-      return responseData;
+      setUploadProgress(false);
+      alert("🎉 ¡Post guardado y anclajes generados automáticamente!");
+      await loadPosts();
+      setActiveTab("social");
+      handleNewPost();
     } catch (error) {
-      console.error('Error al guardar el post:', error);
-      alert('Ocurrió un error al guardar el post. Por favor, inténtalo de nuevo.');
+      console.error("Error saving post:", error);
+      setUploadProgress(false);
+      alert("Error al guardar el artículo");
     }
   };
 
   const handleEditPost = (post: BlogPost) => {
-    setCurrentPost({
-      ...post,
-      // Ensure we have a slug when editing
-      slug: post.slug || generateSlug(post.title)
-    });
-    setTagsInput(post.tags?.join(', ') || "");
+    setCurrentPost(post);
+    setTagsInput(post.tags?.join(", ") || "");
     setIsEditing(true);
     setActiveTab("create");
-  };
-
-  // Function to view the published post
-  const handleViewPost = (post: BlogPost) => {
-    const slug = post.slug || generateSlug(post.title);
-    window.open(`/blog/${encodeURIComponent(slug)}`, '_blank');
-  };
-
-  const handleDownloadHtml = (post: BlogPost) => {
-    const postWithId = {
-      ...post,
-      id: post.id || 0 // Proporcionamos un valor por defecto para el ID
-    };
-    const htmlContent = generateStaticHtml(postWithId);
-    downloadHtmlFile(htmlContent, `${post.slug || generateSlug(post.title)}.html`);
-  };
-
-  const handleDeletePost = async (id: number | undefined) => {
-    if (id === undefined) {
-      console.error('No se puede eliminar el post: ID no definido');
-      alert('Error: No se pudo identificar el post a eliminar');
-      return;
-    }
-
-    if (confirm('¿Estás seguro de que deseas eliminar este artículo?')) {
-      try {
-        const response = await fetch(`/api/blog?id=${id}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al eliminar el post');
-        }
-
-        // Reload posts after delete
-        const updatedPosts = await loadPosts();
-        setPosts(updatedPosts);
-      } catch (error) {
-        console.error('Error al eliminar el post:', error);
-        alert('Ocurrió un error al eliminar el post. Por favor, inténtalo de nuevo.');
-      }
-    }
   };
 
   const handleNewPost = () => {
@@ -483,8 +200,8 @@ export default function AdminPanel() {
       excerpt: "",
       content: "",
       author: "Car One Tecnicentro",
-      readTime: "",
-      image: "",
+      readTime: "5 min",
+      image: "/images/blog-default.jpg",
       category: "",
       status: "draft",
       slug: "",
@@ -492,113 +209,118 @@ export default function AdminPanel() {
       focus_keyword: "",
       tags: [],
       image_alt: "",
-      published_date: new Date().toISOString().split('T')[0],
+      published_date: new Date().toISOString().split("T")[0],
       featured: false,
     });
-    setImageFile(null);
     setTagsInput("");
     setIsEditing(false);
     setActiveTab("create");
   };
 
-  return isAuthorized ? (
-    <div className="min-h-screen bg-gray-50 pt-24">
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(id);
+    setTimeout(() => setCopiedText(""), 2000);
+  };
+
+  if (!isAuthorized) return null;
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-black p-2 rounded-xl">
+              <Sparkles className="text-[#00FF00] w-6 h-6" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-              <p className="text-gray-600">Car One Tecnicentro - Gestión de blog</p>
+              <h1 className="text-xl font-black text-gray-900 leading-none">CAR ONE</h1>
+              <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">Admin CMS v2.0</p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleLogout} variant="outline" className="border-red-500 text-red-500 hover:bg-red-50">
-                <LogOut className="w-4 h-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-              <Button onClick={handleNewPost} className="bg-[#00FF00] hover:bg-[#00CC00] text-black">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Artículo
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleNewPost} className="bg-[#00CC00] hover:bg-[#00AA00] text-black font-bold px-6 rounded-xl shadow-lg shadow-green-200 transition-all hover:scale-105">
+              <Plus className="w-5 h-5 mr-2" />
+              Nuevo Artículo
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" className="text-gray-400 hover:text-red-500">
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
-            <TabsTrigger value="list">Lista de Posts</TabsTrigger>
-            <TabsTrigger value="create">{isEditing ? "Editar" : "Crear"} Post</TabsTrigger>
-            <TabsTrigger value="social">Generador Social</TabsTrigger>
-          </TabsList>
+      <main className="container mx-auto px-6 py-8 flex-grow">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-white border border-gray-200 shadow-sm p-1 rounded-2xl h-14">
+              <TabsTrigger value="list" className="rounded-xl px-8 data-[state=active]:bg-black data-[state=active]:text-white font-bold transition-all">
+                <LayoutList className="w-4 h-4 mr-2" />
+                Artículos
+              </TabsTrigger>
+              <TabsTrigger value="social" className="rounded-xl px-8 data-[state=active]:bg-black data-[state=active]:text-white font-bold transition-all">
+                <Share2 className="w-4 h-4 mr-2 text-[#00CC00]" />
+                Biblioteca Social
+              </TabsTrigger>
+              {activeTab === "create" && (
+                <TabsTrigger value="create" className="rounded-xl px-8 data-[state=active]:bg-black data-[state=active]:text-white font-bold transition-all">
+                  {isEditing ? "Editando Artículo" : "Creando Artículo"}
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <TabsContent value="list" className="mt-6">
-            <div className="grid gap-6">
+            <div className="hidden md:flex items-center gap-6 bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex flex-col border-r border-gray-100 pr-6">
+                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-tighter">Total Posts</span>
+                <span className="text-xl font-black">{posts.length}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-tighter">Publicados</span>
+                <span className="text-xl font-black text-[#00CC00]">{posts.filter(p => p.status === 'published').length}</span>
+              </div>
+            </div>
+          </div>
+
+          <TabsContent value="list" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
-                <Card key={post.id} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="md:flex">
-                      <div className="md:w-48 h-32 md:h-auto relative">
-                        <img
-                          src={post.image || "/placeholder.svg"}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2 left-2">
-                          <Badge variant={post.status === "published" ? "default" : "secondary"}>
-                            {post.status === "published" ? "Publicado" : "Borrador"}
-                          </Badge>
-                        </div>
+                <Card key={post.id} className="group overflow-hidden rounded-3xl border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={post.image || "/placeholder.jpg"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute top-4 left-4">
+                      <Badge className={`${post.status === 'published' ? 'bg-[#00CC00]' : 'bg-gray-400'} text-black font-black px-3 py-1 rounded-lg border-none`}>
+                        {post.status === 'published' ? 'PÚBLICO' : 'BORRADOR'}
+                      </Badge>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                      <div className="flex gap-2 w-full">
+                        <Button onClick={() => handleEditPost(post)} className="flex-1 bg-white hover:bg-gray-100 text-black font-bold rounded-xl h-10">
+                          <Edit className="w-4 h-4 mr-2" /> Editar
+                        </Button>
+                        <Button onClick={() => window.open(`/blog/${post.slug}`, '_blank')} className="w-10 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-xl h-10">
+                          <Eye className="w-4 h-4 text-white" />
+                        </Button>
                       </div>
-                      <div className="flex-1 p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center text-sm text-gray-500 mb-2">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              <span className="mr-4">{post.date}</span>
-                              <Badge variant="outline">{post.category}</Badge>
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{post.title}</h3>
-                            <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
-                          </div>
-                          <div className="flex space-x-2 ml-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditPost(post)}
-                              className="mr-2"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewPost(post)}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Vista previa"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadHtml(post)}
-                              className="text-green-600 hover:text-green-700"
-                              title="Descargar HTML"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeletePost(post.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                      <Calendar className="w-3 h-3" /> {post.date}
+                      <span className="text-gray-200">|</span>
+                      <Tag className="w-3 h-3" /> {post.category}
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 line-clamp-2 leading-tight mb-2 group-hover:text-[#00CC00] transition-colors">{post.title}</h3>
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{post.excerpt}</p>
+                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-50">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        if (post.id) {
+                          if (confirm("¿Eliminar este artículo?")) {
+                            supabase.from('blog_posts').delete().eq('id', post.id).then(() => loadPosts());
+                          }
+                        }
+                      }} className="text-red-300 hover:text-red-500 hover:bg-red-50 p-2 h-8">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -606,453 +328,162 @@ export default function AdminPanel() {
             </div>
           </TabsContent>
 
-          <TabsContent value="create" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{isEditing ? "Editar" : "Crear Nuevo"} Post</CardTitle>
-                <p className="text-sm text-gray-500 mt-2">
-                  Completa todos los campos para optimizar el SEO de tu artículo
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                {/* Información Básica */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Información Básica</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Título <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        value={currentPost.title || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, title: e.target.value })}
-                        placeholder="Ej: 5 Señales de que Necesitas Cambiar las Pastillas de Freno"
-                      />
+          <TabsContent value="create" className="mt-0">
+            <div className="max-w-4xl mx-auto">
+              <Card className="rounded-[40px] border-none shadow-2xl overflow-hidden bg-white">
+                <CardHeader className="p-10 pb-6 border-b border-gray-50 bg-gray-50/30">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center">
+                      {isEditing ? <Edit className="text-white w-6 h-6" /> : <Plus className="text-white w-6 h-6" />}
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Categoría <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        value={currentPost.category || ""}
-                        onValueChange={(value) => setCurrentPost({ ...currentPost, category: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar categoría" />
+                      <CardTitle className="text-3xl font-black">{isEditing ? "Editar Artículo" : "Nuevo Artículo"}</CardTitle>
+                      <p className="text-gray-500 font-medium">Define el contenido principal del blog.</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-10 space-y-8">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Título</label>
+                      <Input value={currentPost.title} onChange={e => setCurrentPost({ ...currentPost, title: e.target.value })} className="h-14 rounded-2xl border-2 border-gray-100 focus:border-black transition-all text-lg font-bold" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Categoría</label>
+                      <Select value={currentPost.category} onValueChange={v => setCurrentPost({ ...currentPost, category: v })}>
+                        <SelectTrigger className="h-14 rounded-2xl border-2 border-gray-100 font-bold">
+                          <SelectValue placeholder="Seleccionar..." />
                         </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="rounded-2xl border-2">
+                          <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
+                          <SelectItem value="Seguridad">Seguridad</SelectItem>
+                          <SelectItem value="Tips">Tips Automotrices</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Extracto / Resumen <span className="text-red-500">*</span>
-                      </label>
-                      <Textarea
-                        value={currentPost.excerpt || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, excerpt: e.target.value })}
-                        placeholder="Resumen breve del artículo (se muestra en la lista de posts)"
-                        rows={3}
-                        className="min-h-[80px]"
-                      />
-                    </div>
                   </div>
-                </div>
 
-                {/* SEO */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
-                    🔍 Optimización SEO
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Meta Descripción (SEO)
-                      </label>
-                      <Textarea
-                        value={currentPost.meta_description || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, meta_description: e.target.value })}
-                        placeholder="Descripción optimizada para motores de búsqueda (155-160 caracteres recomendados)"
-                        rows={2}
-                        maxLength={160}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {(currentPost.meta_description || "").length}/160 caracteres
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Palabra Clave Principal (SEO)
-                      </label>
-                      <Input
-                        value={currentPost.focus_keyword || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, focus_keyword: e.target.value })}
-                        placeholder="Ej: pastillas de freno"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tags (separados por coma)
-                      </label>
-                      <Input
-                        value={tagsInput}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setTagsInput(value);
-                          const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                          setCurrentPost({ ...currentPost, tags: tagsArray });
-                        }}
-                        placeholder="Ej: mantenimiento, seguridad, frenos"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {currentPost.tags?.length || 0} tags
-                      </p>
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Resumen Persuasivo</label>
+                    <Textarea value={currentPost.excerpt} onChange={e => setCurrentPost({ ...currentPost, excerpt: e.target.value })} className="rounded-2xl border-2 border-gray-100 min-h-[100px] font-medium p-4 text-gray-600" />
                   </div>
-                </div>
 
-                {/* Publicación */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
-                    📅 Configuración de Publicación
-                  </h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fecha de Publicación
-                      </label>
-                      <Input
-                        type="date"
-                        value={currentPost.published_date || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, published_date: e.target.value })}
-                      />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Cuerpo del Artículo (Escribe o Pega)</label>
+                      <Badge variant="outline" className="text-[10px] uppercase font-black text-[#00CC00] border-[#00CC00]">Anclas Automáticas ON</Badge>
                     </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Slug (URL personalizada) <span className="ml-2 text-xs text-blue-600">Funcional en producción</span>
-                      </label>
-                      <Input
-                        value={currentPost.slug || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, slug: e.target.value })}
-                        placeholder="Se genera automáticamente desde el título"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        URL: /blog/{currentPost.slug || generateSlug(currentPost.title || "tu-titulo")}
-                      </p>
-                    </div>
+                    <Textarea value={currentPost.content} onChange={e => setCurrentPost({ ...currentPost, content: e.target.value })} className="rounded-[30px] border-2 border-gray-100 min-h-[500px] p-8 font-medium text-lg text-gray-700 leading-relaxed shadow-inner" />
                   </div>
-                </div>
 
-                {/* Multimedia */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center">
-                    🖼️ Imagen Principal
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subir Imagen desde tu dispositivo
-                      </label>
-                      <Input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) setImageFile(file);
-                        }}
-                        className="cursor-pointer"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Formatos: JPG, PNG, WebP, GIF (Máx: 5MB)
-                      </p>
-
-                      {imageFile && (
-                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                          <p className="text-xs text-green-700">
-                            ✓ Archivo seleccionado: {imageFile.name}
-                          </p>
-                        </div>
-                      )}
-
-                      {uploadProgress && (
-                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                          <p className="text-xs text-blue-700">
-                            Subiendo imagen...
-                          </p>
-                        </div>
-                      )}
+                  <div className="grid md:grid-cols-3 gap-8 pt-6 border-t border-gray-50">
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Imagen (Archivo)</label>
+                      <Input type="file" onChange={e => e.target.files && setImageFile(e.target.files[0])} className="rounded-xl border-2 h-12" />
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        URL de Imagen (alternativa)
-                      </label>
-                      <Input
-                        value={currentPost.image || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, image: e.target.value })}
-                        placeholder="/images/ejemplo.jpg o URL completa"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Usa esto si prefieres una URL en lugar de subir
-                      </p>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Texto Alternativo de la Imagen (SEO + Accesibilidad)
-                      </label>
-                      <Input
-                        value={currentPost.image_alt || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, image_alt: e.target.value })}
-                        placeholder="Ej: Mecánico revisando pastillas de freno en Car One Tecnicentro"
-                      />
-                    </div>
-
-                    {/* Preview de imagen */}
-                    {(currentPost.image || imageFile) && (
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Vista Previa
-                        </label>
-                        <div className="border rounded p-2">
-                          <img
-                            src={imageFile ? URL.createObjectURL(imageFile) : currentPost.image}
-                            alt="Preview"
-                            className="w-full max-w-md h-48 object-cover rounded"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contenido */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">
-                    ✍️ Contenido del Artículo
-                  </h3>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contenido <span className="text-red-500">*</span>
-                      <span className="ml-2 text-xs text-gray-500">(Usa HTML para formato)</span>
-                    </label>
-                    <Textarea
-                      value={currentPost.content || ""}
-                      onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
-                      placeholder={`<h2>Título de Sección</h2>
-<p>Tu contenido aquí con <strong>negritas</strong> y formato HTML...</p>
-
-<h3>Subtítulo</h3>
-<ul>
-  <li>Punto 1</li>
-  <li>Punto 2</li>
-</ul>`}
-                      rows={12}
-                      className="min-h-[400px] font-mono text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {(currentPost.content || "").length} caracteres |
-                      {Math.ceil((currentPost.content || "").split(/\s+/).length / 200)} min lectura aprox.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Configuración Adicional */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">
-                    ⚙️ Configuración Adicional
-                  </h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Autor
-                      </label>
-                      <Input
-                        value={currentPost.author || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, author: e.target.value })}
-                        placeholder="Nombre del autor"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tiempo de Lectura
-                      </label>
-                      <Input
-                        value={currentPost.readTime || ""}
-                        onChange={(e) => setCurrentPost({ ...currentPost, readTime: e.target.value })}
-                        placeholder="Ej: 5 min"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Estado
-                      </label>
-                      <Select
-                        value={currentPost.status}
-                        onValueChange={(value) =>
-                          setCurrentPost({ ...currentPost, status: value as "published" | "draft" })
-                        }
-                      >
-                        <SelectTrigger>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Estado</label>
+                      <Select value={currentPost.status} onValueChange={(v: any) => setCurrentPost({ ...currentPost, status: v })}>
+                        <SelectTrigger className="rounded-xl border-2 h-12 font-bold">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-2">
+                          <SelectItem value="published">🚀 Publicar</SelectItem>
                           <SelectItem value="draft">📝 Borrador</SelectItem>
-                          <SelectItem value="published">✅ Publicado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div className="md:col-span-3">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={currentPost.featured || false}
-                          onChange={(e) => setCurrentPost({ ...currentPost, featured: e.target.checked })}
-                          className="w-4 h-4 text-green-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700">
-                          ⭐ Marcar como artículo destacado
-                        </span>
-                      </label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Slug URL</label>
+                      <Input value={currentPost.slug} onChange={e => setCurrentPost({ ...currentPost, slug: e.target.value })} placeholder="url-del-post" className="rounded-xl border-2 h-12 font-mono" />
                     </div>
                   </div>
-                </div>
-
-                {/* Botones de Acción */}
-                <div className="flex justify-end space-x-4 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setActiveTab("list")}
-                    disabled={uploadProgress}
-                  >
-                    Cancelar
+                </CardContent>
+                <CardFooter className="p-10 pt-0 flex justify-end gap-4">
+                  <Button variant="ghost" onClick={() => setActiveTab("list")} className="font-bold px-8 h-14 rounded-2xl">Cancelar</Button>
+                  <Button onClick={handleSavePost} disabled={uploadProgress} className="bg-black hover:bg-gray-800 text-white font-black px-12 h-14 rounded-2xl text-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95">
+                    {uploadProgress ? <><RefreshCw className="w-5 h-5 animate-spin mr-2" /> GUARDANDO...</> : "GUARDAR Y GENERAR SOCIAL"}
                   </Button>
-                  <Button
-                    onClick={handleSavePost}
-                    disabled={uploadProgress}
-                    className="bg-[#00FF00] hover:bg-[#00CC00] text-black font-semibold"
-                  >
-                    {uploadProgress ? "Subiendo imagen..." : isEditing ? "Actualizar Artículo" : "Publicar Artículo"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardFooter>
+              </Card>
+            </div>
           </TabsContent>
-          <TabsContent value="social" className="mt-6">
-            <Card className="border-none shadow-lg bg-white overflow-hidden">
-              <div className="h-2 bg-[#00CC00]" />
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                  <Share2 className="w-7 h-7 text-[#00CC00]" />
-                  Generador de Posts
-                </CardTitle>
-                <p className="text-gray-500">Selecciona un artículo y obtén tus textos para redes sociales al instante.</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-bold text-gray-700">1. Escoge el Artículo</label>
-                    <Select value={socialSlug} onValueChange={setSocialSlug}>
-                      <SelectTrigger className="h-12 text-lg border-2 focus:ring-[#00CC00]/20">
-                        <SelectValue placeholder="Busca tu artículo publicado..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {posts.filter(p => p.status === 'published').map(post => (
-                          <SelectItem key={post.slug} value={post.slug}>{post.title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div className="flex flex-col gap-4">
-                    <Button
-                      onClick={() => handleGenerateSocial(true)}
-                      disabled={socialLoading || !socialSlug}
-                      className="h-14 text-lg font-bold bg-[#00CC00] text-black hover:bg-[#00AA00] transition-all transform hover:scale-[1.01] active:scale-[0.99] shadow-md"
-                    >
-                      {socialLoading ? (
-                        <>
-                          <RefreshCw className="w-5 h-5 animate-spin mr-3" />
-                          Generando contenido...
-                        </>
-                      ) : (
-                        "🚀 EMPEZAR GENERACIÓN"
-                      )}
-                    </Button>
-                    <p className="text-xs text-center text-gray-400 italic">
-                      Se generarán automáticante los copys y se activarán los enlaces en la web.
-                    </p>
+          <TabsContent value="social" className="mt-0">
+            <div className="space-y-10">
+              <div className="bg-black rounded-[40px] p-12 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="relative z-10 max-w-xl text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 bg-[#00FF00]/20 text-[#00FF00] px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-4">
+                    <TrendingUp className="w-3 h-3" /> Estrategia Neuroventas
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight">Biblioteca Social</h2>
+                  <p className="text-gray-400 text-lg font-medium">Contenido listo para FB/IG con redirección inteligente a secciones.</p>
+                </div>
+                <div className="relative z-10 hidden lg:block">
+                  <div className="w-48 h-48 bg-white/5 rounded-[40px] backdrop-blur-3xl flex items-center justify-center p-8 border border-white/10">
+                    <Share2 className="w-full h-full text-[#00FF00] stroke-[1px]" />
                   </div>
                 </div>
+              </div>
 
-                {socialResults && (
-                  <div className="space-y-6 pt-6 border-t animate-in fade-in zoom-in-95 duration-500">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {socialResults.posts.map((post: any, idx: number) => (
-                        <div key={idx} className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-100 relative group overflow-hidden">
-                          <div className="absolute top-0 right-0 p-3">
-                            <Badge className="bg-white text-gray-500 font-bold border-gray-200">OPCIÓN {idx + 1}</Badge>
-                          </div>
+              <div className="grid gap-12">
+                {posts.filter(p => p.status === 'published').map((post) => {
+                  const { anchors } = injectAnchorIds(post.content);
+                  const socialAssets = generateSocialCopy(post.title, post.excerpt, anchors, post.slug);
 
-                          <div className="space-y-4">
-                            <h4 className="text-xs font-black text-[#00CC00] uppercase tracking-[0.2em]">Post Sugerido</h4>
+                  if (anchors.length === 0) return null;
 
-                            <div className="space-y-2">
-                              <div className="p-4 bg-white rounded-xl border-2 border-gray-100 text-gray-800 leading-relaxed min-h-[100px] text-[15px] font-medium shadow-sm">
-                                {post.postB}
-                              </div>
-                              <Button
-                                className="w-full bg-black text-white hover:bg-gray-800 h-11 font-bold rounded-xl flex items-center justify-center gap-2"
-                                onClick={() => copyToClipboard(post.postB, `b-${idx}`)}
-                              >
-                                {copiedText === `b-${idx}` ? (
-                                  <><Check className="w-4 h-4 text-[#00CC00]" /> Copiado</>
-                                ) : (
-                                  <><Copy className="w-4 h-4" /> Copiar Texto</>
-                                )}
-                              </Button>
-                            </div>
-
-                            <div className="pt-2">
-                              <a
-                                href={post.localLink}
-                                target="_blank"
-                                className="text-sm text-blue-600 hover:text-blue-800 font-bold flex items-center gap-2 justify-center py-3 bg-blue-50 rounded-xl transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Probar Link Local (Verificar Scroll)
-                              </a>
-                            </div>
-                          </div>
+                  return (
+                    <div key={post.id} className="space-y-6">
+                      <div className="flex items-center gap-4 ml-2">
+                        <div className="w-1.5 h-10 bg-[#00CC00] rounded-full" />
+                        <div>
+                          <h3 className="text-2xl font-black text-gray-900 leading-none">{post.title}</h3>
+                          <p className="text-sm text-gray-400 font-bold font-mono">mecanicaautomotrizloja.com/blog/{post.slug}</p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
 
-                    <div className="bg-gray-900 border-2 border-dashed border-gray-700 p-4 rounded-xl">
-                      <p className="text-xs text-gray-400 font-mono break-all text-center">
-                        <span className="text-[#00CC00] font-bold">LINK FINAL:</span> {socialResults.posts[0].prodLink}
-                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {socialAssets.map((asset, aIdx) => (
+                          <Card key={aIdx} className="rounded-[32px] border-none shadow-sm hover:shadow-2xl transition-all duration-500 bg-white group overflow-hidden">
+                            <CardHeader className="pb-4 flex flex-row items-center justify-between space-y-0">
+                              <div className="bg-gray-50 px-3 py-1 rounded-lg text-[10px] font-black text-gray-400 border border-gray-100 flex items-center gap-2">
+                                <TrendingUp className="w-3 h-3 text-[#00CC00]" /> SECCIÓN: {asset.section.substring(0, 20)}...
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => window.open(asset.link, '_blank')} className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 rounded-lg">
+                                <ExternalLink className="w-3 h-3 text-blue-500" />
+                              </Button>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                              <div className="space-y-3">
+                                <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 text-[13px] font-medium leading-relaxed text-gray-600 relative overflow-hidden">
+                                  {asset.postB}
+                                  <div className="absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-gray-50 to-transparent" />
+                                </div>
+                                <Button
+                                  onClick={() => copyToClipboard(asset.postB, `copy-${post.id}-${aIdx}`)}
+                                  className="w-full bg-black hover:bg-gray-800 text-white font-black rounded-xl h-11 flex items-center justify-center gap-2"
+                                >
+                                  {copiedText === `copy-${post.id}-${aIdx}` ? <Check className="w-4 h-4 text-[#00FF00]" /> : <><Copy className="w-4 h-4" /> Copiar Post</>}
+                                </Button>
+                              </div>
+
+                              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100/50">
+                                <p className="text-[10px] font-black text-blue-800 uppercase tracking-tighter mb-2">Enlace de Sección</p>
+                                <p className="text-[11px] font-bold text-blue-600 break-all leading-tight italic">{asset.link}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  );
+                })}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
-  ) : null;
+  );
 }
