@@ -398,6 +398,57 @@ export default function AdminPanel() {
                       <Input value={currentPost.slug} onChange={e => setCurrentPost({ ...currentPost, slug: e.target.value })} placeholder="url-del-post" className="rounded-xl border-2 h-12 font-mono" />
                     </div>
                   </div>
+
+                  {/* SEO Section */}
+                  <div className="pt-6 border-t border-gray-50 space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-5 h-5 text-[#00CC00]" />
+                      <h3 className="text-lg font-black text-gray-900">Optimización SEO</h3>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Palabra Clave (Focus Keyword)</label>
+                        <Input
+                          value={currentPost.focus_keyword || ''}
+                          onChange={e => setCurrentPost({ ...currentPost, focus_keyword: e.target.value })}
+                          placeholder="Ej: cambio de aceite, frenos..."
+                          className="rounded-xl border-2 h-12"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Etiquetas (Separadas por comas)</label>
+                        <Input
+                          value={tagsInput}
+                          onChange={e => setTagsInput(e.target.value)}
+                          placeholder="Ej: mantenimiento, seguridad, motor"
+                          className="rounded-xl border-2 h-12"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Meta Descripción (Google)</label>
+                        <Textarea
+                          value={currentPost.meta_description || ''}
+                          onChange={e => setCurrentPost({ ...currentPost, meta_description: e.target.value })}
+                          placeholder="Resumen corto para resultados de búsqueda..."
+                          className="rounded-2xl border-2 border-gray-100 min-h-[100px] font-medium p-4 text-gray-600"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-black text-gray-400 uppercase tracking-wider ml-1">Texto Alternativo Imagen (Alt)</label>
+                        <Input
+                          value={currentPost.image_alt || ''}
+                          onChange={e => setCurrentPost({ ...currentPost, image_alt: e.target.value })}
+                          placeholder="Descripción de la imagen para SEO"
+                          className="rounded-xl border-2 h-12"
+                        />
+                        <p className="text-xs text-gray-400 font-medium ml-1">Describe la imagen para mejorar la accesibilidad y el SEO.</p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="p-10 pt-0 flex justify-end gap-4">
                   <Button variant="ghost" onClick={() => setActiveTab("list")} className="font-bold px-8 h-14 rounded-2xl">Cancelar</Button>
