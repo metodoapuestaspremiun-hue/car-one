@@ -107,7 +107,8 @@ export async function POST(request: Request) {
         // 5. Optional Sync to Supabase
         let syncStatus = "Modo Local";
         if (sync) {
-            const contentMatch = modifiedHtml.match(/<div class="post-content">([\s\S]*?)<\/div>/i);
+            // Improved regex to find the main content block more reliably
+            const contentMatch = modifiedHtml.match(/<div[^>]*class=["']post-content["'][^>]*>([\s\S]*?)<\/div>/i);
             const innerContent = contentMatch ? contentMatch[1].trim() : modifiedHtml;
 
             const { error: dbError } = await supabase
