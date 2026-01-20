@@ -30,13 +30,25 @@ export async function POST(request: Request) {
 
         // 1. Locate local file
         const blogDir = path.join(process.cwd(), 'public/Blog');
+
+        if (!fs.existsSync(blogDir)) {
+            return NextResponse.json({ error: `Directorio de blog no encontrado en: ${blogDir}` }, { status: 404 });
+        }
+
         const files = fs.readdirSync(blogDir);
 
-        let htmlFileName = files.find(f => slugify(f.replace('.html', '')) === slug);
+        // More robust search: Slugify both and compare
+        let htmlFileName = files.find(f => {
+            if (!f.endsWith('.html')) return false;
+            const fileSlug = slugify(f.replace('.html', ''));
+            return fileSlug === slug;
+        });
 
         if (!htmlFileName) {
-            // Try to find by content if slug doesn't match exactly
-            return NextResponse.json({ error: `No se encontró el archivo local para el slug: ${slug}` }, { status: 404 });
+            return NextResponse.json({
+                error: `No se encontró el archivo local para el slug: ${slug}`,
+                debug: { path: blogDir, availableFiles: files.slice(0, 10) }
+            }, { status: 404 });
         }
 
         const filePath = path.join(blogDir, htmlFileName);
@@ -62,8 +74,14 @@ export async function POST(request: Request) {
             }
         }
 
-        // 3. Save modified local HTML
-        fs.writeFileSync(filePath, modifiedHtml, 'utf8');
+        // 3. Save modified local HTML (Only if permissions allow)
+        try {
+            if (process.env.NODE_ENV === 'development') {
+                fs.writeFileSync(filePath, modifiedHtml, 'utf8');
+            }
+        } catch (e: any) {
+            console.warn('⚠️ No se pudo guardar el archivo local (esperado en producción):', e.message);
+        }
 
         // 4. Generate Copy (Logic from reference files)
         const hooksPath = path.join(process.cwd(), 'public/Blog/Documentaciòn para post Facebook e Instagram/20 hooks');
